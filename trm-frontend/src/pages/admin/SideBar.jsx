@@ -1,7 +1,7 @@
 // src/components/admin/Sidebar.jsx
 import React from "react";
 import { NavLink } from "react-router-dom";
-import { Users, Building2, BarChart2, Lightbulb, MapPin, LogOut } from "lucide-react";
+import { Users, Building2, BarChart2, Lightbulb, MapPin, LogOut, Home } from "lucide-react"; // added Home
 import { useAuth } from "../../context/AuthContext";
 
 const Sidebar = ({ onLogout }) => {
@@ -22,8 +22,12 @@ const Sidebar = ({ onLogout }) => {
       </div>
 
       <nav className="flex-1 p-4 space-y-2">
+        <NavLink to="/admin/overview" className={linkClasses}>
+          <BarChart2 size={20} /> Overview
+        </NavLink>
+        
         <NavLink to="/admin/manage-user" className={linkClasses}>
-          <Users size={20} />  Users
+          <Users size={20} /> Users
         </NavLink>
         <NavLink to="/admin/manage-agencies" className={linkClasses}>
           <Building2 size={20} /> Agencies
@@ -31,15 +35,16 @@ const Sidebar = ({ onLogout }) => {
         <NavLink to="/admin/manage-places" className={linkClasses}>
           <MapPin size={20} /> Places
         </NavLink>
+        <NavLink to="/admin/manage-hotels" className={linkClasses}>
+          <Home size={20} /> Hotels
+        </NavLink>
         <NavLink to="/admin/manage-recommendation" className={linkClasses}>
           <Lightbulb size={20} /> Recommendation
         </NavLink>
         <NavLink to="/admin/manage-blogs" className={linkClasses}>
           <Lightbulb size={20} /> Blogs
         </NavLink>
-        <NavLink to="/admin/overview" className={linkClasses}>
-          <BarChart2 size={20} /> Overview
-        </NavLink>
+       
       </nav>
 
       <button
@@ -53,3 +58,4 @@ const Sidebar = ({ onLogout }) => {
 };
 
 export default Sidebar;
+

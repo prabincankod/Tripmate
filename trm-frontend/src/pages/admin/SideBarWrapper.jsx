@@ -1,6 +1,6 @@
 import React from "react";
-import Sidebar from "./SideBar" // make sure file is Sidebar.jsx
-  // import TopBar
+import Sidebar from "./SideBar"; // make sure file is Sidebar.jsx
+import TopBar from "../../components/admin/Topbar" // import TopBar
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 
@@ -20,7 +20,10 @@ const SidebarWrapper = ({ children }) => {
 
       {/* Right content area */}
       <div className="flex-1 flex flex-col">
-      
+        {/* Top bar */}
+        <TopBar />
+
+        {/* Main content */}
         <main className="flex-1 w-full bg-gray-50 overflow-y-auto">
           <div className="p-6 min-h-[calc(100vh-64px)]">
             {children} {/* Page content goes here */}
@@ -32,3 +35,4 @@ const SidebarWrapper = ({ children }) => {
 };
 
 export default SidebarWrapper;
+

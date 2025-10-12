@@ -1,89 +1,127 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { Star } from "lucide-react";
-import { useNavigate } from "react-router-dom"; // import for navigation
+import { useNavigate } from "react-router-dom";
 
 const FeaturesSection = () => {
   const [places, setPlaces] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const navigate = useNavigate(); // initialize navigate
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchTopRatedPlaces = async () => {
+    const fetchFeaturedPlaces = async () => {
       try {
         const { data } = await axios.get(
-          "http://localhost:4000/api/places/featured/top-rated?limit=2"
+        "http://localhost:4000/api/featured-places/features-places"
         );
 
-        if (data.success) {
-          setPlaces(data.places);
-        } else {
-          setError("Failed to load featured places");
-        }
+        setPlaces(data); // backend returns array of featured places
       } catch (err) {
         setError("Error fetching featured places");
-        console.error("Error fetching top-rated places:", err);
+        console.error(err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchTopRatedPlaces();
+    fetchFeaturedPlaces();
   }, []);
 
-  if (loading) {
+  if (loading)
     return (
-      <section className="py-12 bg-gray-50 text-center px-4 sm:px-6 lg:px-8">
+      <section className="py-12 bg-gray-50 text-center">
         <p className="text-gray-600">Loading featured destinations...</p>
       </section>
     );
-  }
 
-  if (error) {
+  if (error)
     return (
-      <section className="py-12 bg-gray-50 text-center px-4 sm:px-6 lg:px-8">
+      <section className="py-12 bg-gray-50 text-center">
         <p className="text-red-500">{error}</p>
       </section>
     );
-  }
+
+  if (!places.length)
+    return (
+      <section className="py-12 bg-gray-50 text-center">
+        <p className="text-gray-500">No featured destinations found.</p>
+      </section>
+    );
 
   return (
     <section className="py-12 bg-gray-50 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-5xl mx-auto">
-        <h2 className="text-3xl font-bold text-slate-800 text-center mb-8">
+      <div className="max-w-6xl mx-auto">
+        <h2 className="text-3xl font-bold text-green-900 text-center mb-8">
           Featured Destinations
         </h2>
 
-        <div className="grid md:grid-cols-2 gap-8">
-          {places.map((place) => (
-            <div
-              key={place._id}
-              className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition duration-300 cursor-pointer"
-              onClick={() => navigate(`/places/${place._id}`)} // navigate on click
-            >
-              <img
-                src={place.images?.[0] || "http://localhost:4000/uploads/placeholder.jpg"} 
-                alt={place.name}
-                className="h-40 w-full object-cover"
-              />
-              <div className="p-4">
-                <h3 className="text-lg font-semibold text-green-900">{place.name}</h3>
-                <p className="text-gray-600 text-sm mt-1 line-clamp-3">
-                  {place.description}
-                </p>
-                <div className="flex items-center mt-2">
-                  <Star className="text-yellow-400 w-4 h-4 fill-yellow-400" />
-                  <span className="ml-1 font-medium text-gray-700 text-sm">
-                    {place.averageRating ? place.averageRating.toFixed(1) : "N/A"}
-                  </span>
-                  <span className="ml-2 text-gray-500 text-xs">
-                    ({place.reviewCount || 0} reviews)
-                  </span>
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {places.map((place) => {
+            const avgRating = place.hotels?.length
+              ? (
+                  place.hotels.reduce(
+                    (sum, h) => sum + (h.averageRating || 0),
+                    0
+                  ) / place.hotels.length
+                ).toFixed(1)
+              : "N/A";
+
+            const totalReviews =
+              place.hotels?.reduce((sum, h) => sum + (h.totalReviews || 0), 0) ||
+              0;
+
+            return (
+              <div
+                key={place._id}
+                className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition duration-300 cursor-pointer"
+                onClick={() => navigate(`/places/${place._id}`)}
+              >
+                <img
+                  src={
+                    place.images?.[0] ||
+                    "https://via.placeholder.com/400x200?text=No+Image"
+                  }
+                  alt={place.name}
+                  className="h-48 w-full object-cover"
+                />
+                <div className="p-4 flex flex-col h-full">
+                  <h3 className="text-lg font-semibold text-green-900">
+                    {place.name}
+                  </h3>
+                  <p className="text-gray-600 text-sm mt-1 line-clamp-3">
+                    {place.description || "No description available"}
+                  </p>
+
+                  <div className="mt-2 flex items-center">
+                    <Star className="text-yellow-400 w-4 h-4 fill-yellow-400" />
+                    <span className="ml-1 font-medium text-gray-700 text-sm">
+                      {avgRating}
+                    </span>
+                    <span className="ml-2 text-gray-500 text-xs">
+                      ({totalReviews} reviews)
+                    </span>
+                  </div>
+
+                  {/* Top Hotels */}
+                  {place.hotels?.length > 0 && (
+                    <div className="mt-2">
+                      <h4 className="text-sm font-semibold text-gray-600">
+                        Top Hotels:
+                      </h4>
+                      <ul className="text-xs text-gray-700 list-disc ml-4">
+                        {place.hotels.map((hotel) => (
+                          <li key={hotel._id}>
+                            {hotel.name} ({hotel.averageRating?.toFixed(1)})
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>
@@ -91,6 +129,8 @@ const FeaturesSection = () => {
 };
 
 export default FeaturesSection;
+
+
 
 
 

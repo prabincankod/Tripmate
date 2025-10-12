@@ -18,6 +18,9 @@ import blogRoutes from "./routes/blogRoutes.js";
 import recommendationRoutes from "./routes/RecommendationRoutes.js"
 import postRoutes from "./routes/PostRoutes.js"
 import esewaRouter from "./routes/paymentRoutes.js";
+import hotelRoutes from "./routes/HotelRoute.js"
+import  featuredPlacesRoutes from "./routes/FeaturesRoutes.js"
+import suggestRoutes from "./routes/PlaceRecommendationRoutes.js"
 
 
 
@@ -53,7 +56,9 @@ app.use("/api/blogs", blogRoutes);
 app.use("/api/esewa",esewaRouter)
 
 app.use("/api/posts", postRoutes);  
-
+app.use("/api/hotels", hotelRoutes);
+app.use("/api/featured-places", featuredPlacesRoutes);
+app.use("/api/place-recommendations",suggestRoutes);
 
 
 

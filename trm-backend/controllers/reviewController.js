@@ -1,24 +1,27 @@
 import Review from "../models/reviewModel.js";
 import Place from "../models/PlaceModel.js";
+import Hotel from "../models/HotelModel.js";
 
-
-const updatePlaceRating = async (placeId) => {
-  const reviews = await Review.find({ placeId });
+// ------------------ Helper: Update average rating ------------------
+const updateRating = async (type, id) => {
+  const filter = type === "Place" ? { placeId: id } : { hotelId: id };
+  const reviews = await Review.find(filter);
   const reviewCount = reviews.length;
   const averageRating = reviewCount
     ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviewCount
     : 0;
 
-  await Place.findByIdAndUpdate(placeId, { averageRating, reviewCount });
+  const Model = type === "Place" ? Place : Hotel;
+  await Model.findByIdAndUpdate(id, { averageRating, reviewCount });
 };
 
-
+// ------------------ Get reviews for Place or Hotel ------------------
 export const getReviews = async (req, res) => {
   try {
-    const reviews = await Review.find({ placeId: req.params.placeId }).populate(
-      "user",
-      "_id name"
-    );
+   const { type, id } = req.query// e.g. /reviews/Place/:id or /reviews/Hotel/:id
+    const filter = type === "Place" ? { placeId: id } : { hotelId: id };
+
+    const reviews = await Review.find(filter).populate("user", "_id name");
     res.json({ success: true, reviews });
   } catch (error) {
     res.status(500).json({
@@ -29,16 +32,18 @@ export const getReviews = async (req, res) => {
   }
 };
 
-
+// ------------------ Add review ------------------
 export const addReview = async (req, res) => {
   try {
-    const { placeId, rating, comment } = req.body;
+    const { type, id, rating, comment } = req.body;
+
+    console.log("➡️ Received:", { type, id });
 
     const newReview = new Review({
-      placeId,
       user: req.user._id,
       rating,
       comment,
+      ...(type === "Place" ? { placeId: id } : { hotelId: id }),
     });
 
     await newReview.save();
@@ -48,10 +53,28 @@ export const addReview = async (req, res) => {
       "_id name"
     );
 
-    await updatePlaceRating(placeId);
+    let relatedName = null;
+    if (type === "Hotel") {
+      const hotel = await Hotel.findById(id, "name");
+      console.log(" Hotel found:", hotel);
+      relatedName = hotel ? hotel.name : null;
+    } else if (type === "Place") {
+      const place = await Place.findById(id, "name");
+      console.log("📍 Place found:", place);
+      relatedName = place ? place.name : null;
+    }
 
-    res.status(201).json({ success: true, review: populatedReview });
+    await updateRating(type, id);
+
+    res.status(201).json({
+      success: true,
+      review: {
+        ...populatedReview.toObject(),
+        relatedName,
+      },
+    });
   } catch (error) {
+    console.error("❌ Add Review Error:", error);
     res.status(500).json({
       success: false,
       message: "Error adding review",
@@ -61,15 +84,19 @@ export const addReview = async (req, res) => {
 };
 
 
+// ------------------ Update review ------------------
 export const updateReview = async (req, res) => {
   try {
     const review = await Review.findById(req.params.id);
     if (!review)
-      return res.status(404).json({ success: false, message: "Review not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Review not found" });
 
-    if (review.user.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ success: false, message: "Not authorized" });
-    }
+    if (review.user.toString() !== req.user._id.toString())
+      return res
+        .status(403)
+        .json({ success: false, message: "Not authorized" });
 
     review.rating = req.body.rating || review.rating;
     review.comment = req.body.comment || review.comment;
@@ -80,7 +107,10 @@ export const updateReview = async (req, res) => {
       "_id name"
     );
 
-    await updatePlaceRating(review.placeId);
+    const type = review.placeId ? "Place" : "Hotel";
+    const id = review.placeId || review.hotelId;
+
+    await updateRating(type, id);
 
     res.json({ success: true, review: populatedReview });
   } catch (error) {
@@ -92,19 +122,25 @@ export const updateReview = async (req, res) => {
   }
 };
 
-
+// ------------------ Delete review ------------------
 export const deleteReview = async (req, res) => {
   try {
     const review = await Review.findById(req.params.id);
     if (!review)
-      return res.status(404).json({ success: false, message: "Review not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Review not found" });
 
-    if (review.user.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ success: false, message: "Not authorized" });
-    }
+    if (review.user.toString() !== req.user._id.toString())
+      return res
+        .status(403)
+        .json({ success: false, message: "Not authorized" });
+
+    const type = review.placeId ? "Place" : "Hotel";
+    const id = review.placeId || review.hotelId;
 
     await review.deleteOne();
-    await updatePlaceRating(review.placeId);
+    await updateRating(type, id);
 
     res.json({ success: true, message: "Review deleted successfully" });
   } catch (error) {

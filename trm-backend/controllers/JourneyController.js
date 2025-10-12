@@ -110,7 +110,13 @@ export const isSavedPlace = async (req, res) => {
     const user = await UserModel.findById(userId);
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    const isSaved = user.savedPlaces.includes(placeId);
+    // Ensure savedPlaces is always an array
+    const savedPlaces = Array.isArray(user.savedPlaces) ? user.savedPlaces : [];
+
+    // Check if placeId exists in savedPlaces
+    const isSaved = savedPlaces.some((p) =>
+      p.placeId ? p.placeId.toString() === placeId : p.toString() === placeId
+    );
 
     return res.json({ isSaved });
   } catch (err) {
@@ -118,6 +124,7 @@ export const isSavedPlace = async (req, res) => {
     return res.status(500).json({ message: "Server error" });
   }
 };
+
 
 export const getSavedPlaces = async (req, res) => {
   try {

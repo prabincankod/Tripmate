@@ -19,6 +19,7 @@ import CategoryPage from "../components/home/Categorypages";
 import SearchResults from "../components/Place/SearchResult";
 import Places from "../components/Place/Places";
 import PlaceDetail from "../components/Place/PlaceDetail";
+import Info from "../components/Place/Info"
 
 import TravelJourney from "../components/TravelJourney/Card/TravelJourney";
 import TravelPackages from "../pages/travelpackagepage/TravelPackages";
@@ -41,6 +42,12 @@ import ManageRecommendation from "../pages/admin/AdminRecommendation"
 import ManageBlogs from "../pages/admin/ManageBlogs";
 import BlogDetails from "../pages/explorepage/blog/BlogDetails";
 import SuccessPage from "../pages/Esewa/SuccessPage"
+import ManageHotels from "../pages/admin/ManageHotel";
+import AdminOverview from "../pages/admin/AdminOverview";
+import Profile from "../pages/user/Profile"
+import AdminProfile from "../pages/admin/AdminProfile";
+
+
 
 
 
@@ -56,8 +63,9 @@ const PageRoutes = () => {
 
       <Route path="/homepage" element={<MainLayout><Homepage /></MainLayout>} />
       <Route path="/places" element={<MainLayout><Places /></MainLayout>} />
+       <Route path="/info" element={<MainLayout><Info /></MainLayout>} />
       <Route path="/places/:id" element={<MainLayout><PlaceDetail /></MainLayout>} />
-       <Route path="/category/:category" element={<CategoryPage />} />
+       <Route path="/category/:category" element={<MainLayout><CategoryPage /></MainLayout>} />
       <Route path="/search" element={<MainLayout><SearchResults /></MainLayout>} />
       <Route path="/journey" element={<MainLayout><TravelJourney /></MainLayout>} />
       <Route path="/packages" element={<MainLayout><TravelPackages /></MainLayout>} />
@@ -71,7 +79,7 @@ const PageRoutes = () => {
      
     
       <Route path="/explore" element={<MainLayout><ExplorePage /></MainLayout>} />
-       <Route path="/explore/recommendplace" element={<MainLayout><RecommendationPage /></MainLayout>} />
+       <Route path="recommendation" element={<MainLayout><RecommendationPage /></MainLayout>} />
         <Route path="/blogs/create" element={<MainLayout><BlogCreatePage /></MainLayout>} />
         <Route path="/edit-blog/:id" element={<BlogEdit />} />
        
@@ -93,10 +101,18 @@ const PageRoutes = () => {
       <Route path="/admin/manage-agencies" element={<SidebarWrapper><ManageAgencies /></SidebarWrapper>} />
       <Route path="/admin/manage-places" element={<SidebarWrapper><ManagePlaces /></SidebarWrapper> }/>
       <Route path="/admin/manage-user" element={<SidebarWrapper><ManageUser /></SidebarWrapper>} />
-       
+         <Route path="/admin/manage-hotels" element={<SidebarWrapper><ManageHotels /></SidebarWrapper>} />
         <Route path="/admin/manage-recommendation" element={<SidebarWrapper><ManageRecommendation /></SidebarWrapper>} />
          <Route path="/admin/manage-blogs" element={<SidebarWrapper><ManageBlogs /></SidebarWrapper>} />
-      
+           <Route path="/admin/overview" element={<SidebarWrapper><AdminOverview /></SidebarWrapper>} />
+         
+              <Route path="/profile" element={<MainLayout><Profile /></MainLayout>} />
+              <Route path="/agency/profile" element={<Profile />} />
+              
+              <Route path="/admin/profile"element={<SidebarWrapper><AdminProfile /></SidebarWrapper>}
+/>
+
+                    
      
     </Routes>
   );

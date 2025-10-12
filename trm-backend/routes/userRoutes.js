@@ -27,7 +27,9 @@ router.post("/create-admin", createAdmin);
 router.get("/profile", checkAuthorization, getMyProfile);
 router.put("/:userId", checkAuthorization, updateUser);
 router.patch("/:userId/password", checkAuthorization, updatePassword);
+
 router.delete("/:userId", checkAuthorization, checkAdminOnly, deleteUser);
+
 
 
 router.post("/travel/click", checkAuthorization, recordTravelClick);      

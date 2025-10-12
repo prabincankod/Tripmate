@@ -35,7 +35,7 @@ const Login = () => {
 
         
         if (user.role === "Admin") {
-          navigate("/admin/dashboard");
+          navigate("/admin/overview");
         } else if (user.role === "TravelAgency") {
           navigate("/dashboard/agency");
         } else {

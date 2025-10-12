@@ -1,59 +1,124 @@
 import React from "react";
 
-const PlaceForm = ({
-  formData,
-  setFormData,
-  handleInputChange,
-  handlePlaceImages,
-  handleAttractionChange,
-  handleAttractionImage,
-  addAttraction,
-  removeAttraction,
-  handleThingsToDoChange,
-  handleThingsToDoDescriptionChange,
-  handleThingsToDoImage,
-  addThingsToDo,
-  removeThingsToDo,
-  handleSubmit,
-}) => {
-  const travelStyleOptions = ["Food", "Adventure", "Temple", "City"];
-  const allowedFileTypes = ".jpeg,.jpg,.png,.pdf";
+const travelStyleOptions = ["City", "Food", "Temple", "Adventure"];
+const seasonOptions = ["Spring", "Summer", "Autumn", "Winter"];
+const attractionTypes = ["City", "Adventure", "Temple", "Park", "Museum"];
+
+const PlaceForm = ({ formData, setFormData, handleSubmit }) => {
+  const fileTypes = ".jpg,.jpeg,.png";
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleImagesChange = (e) => {
+    setFormData(prev => ({ ...prev, images: Array.from(e.target.files) }));
+  };
+
+  const handleArrayChange = (key, index, field, value) => {
+    const updated = [...formData[key]];
+    updated[index][field] = value;
+    setFormData(prev => ({ ...prev, [key]: updated }));
+  };
+
+  const handleArrayFileChange = (key, index, file) => {
+    const updated = [...formData[key]];
+    updated[index].image = file;
+    setFormData(prev => ({ ...prev, [key]: updated }));
+  };
+
+  const removeArrayItem = (key, index) => {
+    const updated = [...formData[key]];
+    updated.splice(index, 1);
+    setFormData(prev => ({ ...prev, [key]: updated }));
+  };
+
+  const addArrayItem = (key, newItem = {}) => {
+    const updated = formData[key] ? [...formData[key], newItem] : [newItem];
+    setFormData(prev => ({ ...prev, [key]: updated }));
+  };
+
+  const sections = [
+    { key: "topAttractions", label: "Top Attractions", fields: ["name", "type"] },
+    { key: "thingsToDo", label: "Things To Do", fields: ["title", "description", "travelStyle"] },
+    { key: "localCulture", label: "Local Culture", fields: ["festival", "description"] },
+    { key: "localCuisine", label: "Local Cuisine", fields: ["dish", "description"] },
+    { key: "tripPlans", label: "Trip Plans", fields: ["title", "description"] },
+  ];
 
   return (
-    <form onSubmit={handleSubmit} className="border p-4 rounded mb-6 bg-gray-50">
-   
-      <input
-        type="text"
-        name="name"
-        placeholder="Place Name"
-        value={formData.name}
-        onChange={handleInputChange}
-        className="border p-2 w-full mb-2 rounded"
-        required
-      />
-      <textarea
-        name="description"
-        placeholder="Description"
-        value={formData.description}
-        onChange={handleInputChange}
-        className="border p-2 w-full mb-2 rounded"
-        required
-      />
-      <input
-        type="text"
-        name="address"
-        placeholder="Address"
-        value={formData.address}
-        onChange={handleInputChange}
-        className="border p-2 w-full mb-2 rounded"
-        required
-      />
+    <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg border shadow-sm space-y-4">
 
-    
+      {/* Basic Info */}
       <div className="mb-2">
-        <label className="block font-medium">Travel Styles</label>
+        <label className="font-medium block mb-1">Place Name</label>
+        <input
+          type="text"
+          name="name"
+          value={formData.name}
+          onChange={handleInputChange}
+          className="border p-2 w-full rounded focus:outline-none focus:ring-2 focus:ring-blue-300 hover:border-gray-400 transition"
+          required
+        />
+      </div>
+
+      <div className="mb-2">
+        <label className="font-medium block mb-1">Description</label>
+        <textarea
+          name="description"
+          value={formData.description}
+          onChange={handleInputChange}
+          className="border p-2 w-full rounded focus:outline-none focus:ring-2 focus:ring-blue-300 hover:border-gray-400 transition"
+          rows={3}
+          required
+        />
+      </div>
+
+      <div className="mb-2">
+        <label className="font-medium block mb-1">Address</label>
+        <input
+          type="text"
+          name="address"
+          value={formData.address}
+          onChange={handleInputChange}
+          className="border p-2 w-full rounded focus:outline-none focus:ring-2 focus:ring-blue-300 hover:border-gray-400 transition"
+          required
+        />
+      </div>
+
+      {/* Best Season */}
+      <div className="mb-2">
+        <label className="font-medium block mb-1">Best Season</label>
+        <select
+          name="bestSeason"
+          value={formData.bestSeason || ""}
+          onChange={handleInputChange}
+          className="border p-2 w-full rounded focus:outline-none focus:ring-2 focus:ring-blue-300 hover:border-gray-400 transition"
+        >
+          <option value="">Select Season</option>
+          {seasonOptions.map(season => (
+            <option key={season} value={season}>{season}</option>
+          ))}
+        </select>
+      </div>
+
+      <div className="mb-2">
+        <label className="font-medium block mb-1">Travel Tips</label>
+        <textarea
+          name="travelTips"
+          value={formData.travelTips || ""}
+          onChange={handleInputChange}
+          className="border p-2 w-full rounded focus:outline-none focus:ring-2 focus:ring-blue-300 hover:border-gray-400 transition"
+          rows={3}
+        />
+      </div>
+
+      {/* Travel Styles */}
+      <div className="mb-2">
+        <label className="font-medium block mb-1">Travel Styles</label>
         <div className="flex gap-2 flex-wrap mt-1">
-          {travelStyleOptions.map((style) => (
+          {travelStyleOptions.map(style => (
             <label key={style} className="flex items-center gap-1">
               <input
                 type="checkbox"
@@ -61,15 +126,9 @@ const PlaceForm = ({
                 checked={formData.travelStyles.includes(style)}
                 onChange={(e) => {
                   if (e.target.checked) {
-                    setFormData((prev) => ({
-                      ...prev,
-                      travelStyles: [...prev.travelStyles, style],
-                    }));
+                    setFormData(prev => ({ ...prev, travelStyles: [...prev.travelStyles, style] }));
                   } else {
-                    setFormData((prev) => ({
-                      ...prev,
-                      travelStyles: prev.travelStyles.filter((s) => s !== style),
-                    }));
+                    setFormData(prev => ({ ...prev, travelStyles: prev.travelStyles.filter(s => s !== style) }));
                   }
                 }}
               />
@@ -79,147 +138,117 @@ const PlaceForm = ({
         </div>
       </div>
 
-    
-      <div className="mb-2">
-        <label className="block font-medium">Place Images (max 5)</label>
+      {/* Main Place Images */}
+      <div className="mb-4">
+        <label className="block font-medium mb-1">Place Images</label>
         <input
           type="file"
           multiple
-          accept={allowedFileTypes}
-          onChange={handlePlaceImages}
+          accept={fileTypes}
+          onChange={handleImagesChange}
         />
         {formData.images.length > 0 && (
-          <p className="text-sm text-gray-600">{formData.images.length} selected</p>
-        )}
-      </div>
-      <h3 className="text-lg font-semibold mt-4">Top Attractions (max 5)</h3>
-      <div className="flex gap-4 overflow-x-auto py-2">
-        {formData.topAttractions.map((attr, i) => (
-          <div
-            key={i}
-            className="min-w-[160px] flex-shrink-0 rounded-xl shadow hover:shadow-2xl transform hover:-translate-y-1 hover:scale-105 transition-all duration-300 bg-white"
-          >
-            <div className="w-full h-32 overflow-hidden rounded-t-xl">
-              {attr.image || attr.existingImage ? (
+          <div className="flex gap-2 mt-2 flex-wrap">
+            {formData.images.map((img, i) => (
+              <div key={i} className="w-24 h-24 overflow-hidden rounded border">
                 <img
-                  src={
-                    attr.image
-                      ? URL.createObjectURL(attr.image)
-                      : attr.existingImage
-                  }
-                  alt={attr.name}
+                  src={img instanceof File ? URL.createObjectURL(img) : img}
+                  alt="preview"
                   className="w-full h-full object-cover"
                 />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-gray-400">
-                  No Image
-                </div>
-              )}
-            </div>
-            <div className="p-2 text-center">
-              <input
-                type="text"
-                placeholder="Attraction Name"
-                value={attr.name}
-                onChange={(e) => handleAttractionChange(i, e.target.value)}
-                className="border p-1 rounded w-full text-sm mb-1"
-                required
-              />
-              <input
-                type="file"
-                accept={allowedFileTypes}
-                onChange={(e) => handleAttractionImage(i, e.target.files[0])}
-                className="text-xs"
-              />
-              <button
-                type="button"
-                onClick={() => removeAttraction(i)}
-                className="mt-1 bg-red-500 text-white px-2 py-1 rounded text-xs"
-              >
-                Remove
-              </button>
-            </div>
+              </div>
+            ))}
           </div>
-        ))}
-        {formData.topAttractions.length < 5 && (
-          <button
-            type="button"
-            onClick={addAttraction}
-            className="min-w-[160px] flex-shrink-0 bg-green-500 text-white px-3 py-2 rounded-xl hover:bg-green-600"
-          >
-            + Add Attraction
-          </button>
         )}
       </div>
 
-   
-      <h3 className="text-lg font-semibold mt-4">Things To Do (max 5)</h3>
-      <div className="flex gap-4 overflow-x-auto py-2">
-        {formData.thingsToDo.map((todo, i) => (
-          <div
-            key={i}
-            className="min-w-[160px] flex-shrink-0 rounded-xl shadow hover:shadow-2xl transform hover:-translate-y-1 hover:scale-105 transition-all duration-300 bg-white"
-          >
-            <div className="w-full h-32 overflow-hidden rounded-t-xl">
-              {todo.image || todo.existingImage ? (
-                <img
-                  src={
-                    todo.image ? URL.createObjectURL(todo.image) : todo.existingImage
-                  }
-                  alt={todo.title}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-gray-400">
-                  No Image
+      {/* Dynamic Sections */}
+      {sections.map(section => (
+        <div key={section.key} className="mb-4">
+          <h3 className="font-semibold mb-2">{section.label}</h3>
+
+          {formData[section.key]?.map((item, idx) => (
+            <div key={idx} className="border rounded p-2 mb-2 relative bg-gray-50 hover:bg-gray-100 transition">
+
+              {section.fields.map(field => (
+                <div className="mb-1" key={field}>
+                  <label className="font-medium block mb-1">{field.charAt(0).toUpperCase() + field.slice(1)}</label>
+
+                  {(field === "type" && section.key === "topAttractions") && (
+                    <select
+                      value={item[field] || ""}
+                      onChange={e => handleArrayChange(section.key, idx, field, e.target.value)}
+                      className="border p-1 w-full rounded focus:outline-none focus:ring-2 focus:ring-blue-300 hover:border-gray-400 transition"
+                    >
+                      <option value="">Select Type</option>
+                      {attractionTypes.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                    </select>
+                  )}
+
+                  {(field === "travelStyle" && section.key === "thingsToDo") && (
+                    <select
+                      value={item[field] || ""}
+                      onChange={e => handleArrayChange(section.key, idx, field, e.target.value)}
+                      className="border p-1 w-full rounded focus:outline-none focus:ring-2 focus:ring-blue-300 hover:border-gray-400 transition"
+                    >
+                      <option value="">Select Travel Style</option>
+                      {travelStyleOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                    </select>
+                  )}
+
+                  {/* default text input */}
+                  {(!["type", "travelStyle"].includes(field) || section.key === "tripPlans") && (
+                    <input
+                      type="text"
+                      value={item[field] || ""}
+                      onChange={e => handleArrayChange(section.key, idx, field, e.target.value)}
+                      className="border p-1 w-full rounded focus:outline-none focus:ring-2 focus:ring-blue-300 hover:border-gray-400 transition"
+                    />
+                  )}
+                </div>
+              ))}
+
+              {/* Image Preview (skip for tripPlans) */}
+              {section.key !== "tripPlans" && (
+                <div className="w-full h-32 overflow-hidden rounded-t-xl mb-1">
+                  <input
+                    type="file"
+                    onChange={e => handleArrayFileChange(section.key, idx, e.target.files[0])}
+                    className="border p-1 rounded w-full mb-1"
+                  />
+                  {item.image || item.existingImage ? (
+                    <img
+                      src={item.image ? URL.createObjectURL(item.image) : item.existingImage}
+                      alt="preview"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : null}
                 </div>
               )}
-            </div>
-            <div className="p-2 text-center">
-              <input
-                type="text"
-                placeholder="Activity Title"
-                value={todo.title}
-                onChange={(e) => handleThingsToDoChange(i, e.target.value)}
-                className="border p-1 rounded w-full text-sm mb-1"
-                required
-              />
-              <textarea
-                placeholder="Description"
-                value={todo.description}
-                onChange={(e) => handleThingsToDoDescriptionChange(i, e.target.value)}
-                className="border p-1 rounded w-full text-sm mb-1"
-              />
-              <input
-                type="file"
-                accept={allowedFileTypes}
-                onChange={(e) => handleThingsToDoImage(i, e.target.files[0])}
-                className="text-xs"
-              />
+
               <button
                 type="button"
-                onClick={() => removeThingsToDo(i)}
-                className="mt-1 bg-red-500 text-white px-2 py-1 rounded text-xs"
+                onClick={() => removeArrayItem(section.key, idx)}
+                className="absolute top-1 right-1 text-red-500 text-xs hover:underline"
               >
                 Remove
               </button>
             </div>
-          </div>
-        ))}
-        {formData.thingsToDo.length < 5 && (
+          ))}
+
           <button
             type="button"
-            onClick={addThingsToDo}
-            className="min-w-[160px] flex-shrink-0 bg-green-500 text-white px-3 py-2 rounded-xl hover:bg-green-600"
+            onClick={() => addArrayItem(section.key, {})}
+            className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 text-sm transition"
           >
-            + Add Thing To Do
+            Add {section.label.slice(0, -1)}
           </button>
-        )}
-      </div>
+        </div>
+      ))}
 
       <button
         type="submit"
-        className="px-4 py-2 bg-blue-500 text-white rounded mt-4 hover:bg-blue-600"
+        className="mt-4 px-4 py-2 bg-gray-800 text-white rounded hover:bg-gray-700 transition"
       >
         Save Place
       </button>
@@ -228,11 +257,6 @@ const PlaceForm = ({
 };
 
 export default PlaceForm;
-
-
-
-
-
 
 
 

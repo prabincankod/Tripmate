@@ -25,11 +25,13 @@ const Landing = () => {
         <LandingSections />
         <Footer />
       </div>
+      
     </div>
   );
 };
 
 export default Landing;
+
 
 
 

@@ -1,20 +1,18 @@
 import React from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import { Users, Building2, Lightbulb, BarChart2, LogOut, MapPin } from "lucide-react";
+import { Users, Building2, Lightbulb, BarChart2, LogOut, MapPin, Home } from "lucide-react";
 import TopBar from "../../components/admin/Topbar";
 
 const AdminDashboard = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
- 
   const handleLogout = () => {
     logout(); 
     navigate("/login"); 
   };
 
-  
   const linkClasses = ({ isActive }) =>
     `flex items-center gap-3 p-2 rounded-lg cursor-pointer transition ${
       isActive
@@ -24,7 +22,6 @@ const AdminDashboard = () => {
 
   return (
     <div className="flex h-screen w-full bg-gray-100">
-     
       <aside className="w-64 bg-white shadow-lg flex flex-col">
         <div className="p-6 border-b">
           <h1 className="text-2xl font-bold text-blue-600">Admin Panel</h1>
@@ -32,9 +29,14 @@ const AdminDashboard = () => {
         </div>
 
         <nav className="flex-1 p-4 space-y-2">
+           <NavLink to="/admin/overview" className={linkClasses}>
+            <BarChart2 size={20} />
+            AdminOverview
+          </NavLink>
+          
           <NavLink to="/admin/manage-user" className={linkClasses}>
             <Users size={20} />
-           Users
+            Users
           </NavLink>
 
           <NavLink to="/admin/manage-agencies" className={linkClasses}>
@@ -44,24 +46,25 @@ const AdminDashboard = () => {
 
           <NavLink to="/admin/manage-places" className={linkClasses}>
             <MapPin size={20} />
-           Places
+            Places
           </NavLink>
 
-            <NavLink to="/admin/manage-recommendation" className={linkClasses}>
+          <NavLink to="/admin/manage-hotels" className={linkClasses}>
+            <Home size={20} />
+            Hotels
+          </NavLink>
+
+          <NavLink to="/admin/manage-recommendation" className={linkClasses}>
             <Lightbulb size={20} />
             Recommendation
           </NavLink>
           
-            <NavLink to="/admin/manage-blogs" className={linkClasses}>
+          <NavLink to="/admin/manage-blogs" className={linkClasses}>
             <Lightbulb size={20} />
             Blogs
           </NavLink>
 
-
-          <NavLink to="/admin/overview" className={linkClasses}>
-            <BarChart2 size={20} />
-           AdminOverview
-          </NavLink>
+          
         </nav>
 
         <button
@@ -73,7 +76,6 @@ const AdminDashboard = () => {
         </button>
       </aside>
 
-     
       <div className="flex-1 flex flex-col">
         <TopBar />
         <main className="flex-1 w-full bg-gray-50 overflow-y-auto">
@@ -87,5 +89,6 @@ const AdminDashboard = () => {
 };
 
 export default AdminDashboard;
+
 
 

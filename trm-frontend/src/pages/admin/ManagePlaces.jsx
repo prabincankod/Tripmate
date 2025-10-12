@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import Loader from "../../components/common/Loader";
-import PlaceForm from "./PlaceForm";
+import PlaceForm from "./placeForm";
+import PlaceTable from "./PlaceTable";
 
 const ManagePlaces = () => {
   const [places, setPlaces] = useState([]);
@@ -9,20 +10,27 @@ const ManagePlaces = () => {
   const [formVisible, setFormVisible] = useState(false);
   const [editPlace, setEditPlace] = useState(null);
   const [message, setMessage] = useState(null);
+  const [selectedPlace, setSelectedPlace] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterStyle, setFilterStyle] = useState("");
 
   const [formData, setFormData] = useState({
     name: "",
     description: "",
     address: "",
     images: [],
+    bestSeason: "",
+    travelTips: "",
     travelStyles: [],
-    topAttractions: [{ name: "", image: null, existingImage: "" }],
-    thingsToDo: [{ title: "", description: "", image: null, existingImage: "" }],
+    topAttractions: [{ name: "", type: "", image: null, existingImage: "" }],
+    thingsToDo: [{ title: "", description: "", travelStyle: "", image: null, existingImage: "" }],
+    localCulture: [{ festival: "", description: "", image: null, existingImage: "" }],
+    localCuisine: [{ dish: "", description: "", image: null, existingImage: "" }],
   });
 
   const API_URL = "http://localhost:4000/api/places";
 
- 
+  // ------------------ FETCH PLACES ------------------
   const fetchPlaces = async () => {
     try {
       setLoading(true);
@@ -31,7 +39,7 @@ const ManagePlaces = () => {
       const res = await axios.get(API_URL, config);
       setPlaces(res.data);
     } catch (err) {
-      console.error("Fetch places error:", err);
+      console.error(err);
       setMessage({ type: "error", text: "Failed to fetch places" });
     } finally {
       setLoading(false);
@@ -42,68 +50,25 @@ const ManagePlaces = () => {
     fetchPlaces();
   }, []);
 
- 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+  // ------------------ RESET FORM ------------------
+  const resetForm = () => {
+    setFormData({
+      name: "",
+      description: "",
+      address: "",
+      images: [],
+      bestSeason: "",
+      travelTips: "",
+      travelStyles: [],
+      topAttractions: [{ name: "", type: "", image: null, existingImage: "" }],
+      thingsToDo: [{ title: "", description: "", travelStyle: "", image: null, existingImage: "" }],
+      localCulture: [{ festival: "", description: "", image: null, existingImage: "" }],
+      localCuisine: [{ dish: "", description: "", image: null, existingImage: "" }],
+    });
+    setEditPlace(null);
   };
 
-  const handlePlaceImages = (e) => {
-    setFormData((prev) => ({ ...prev, images: Array.from(e.target.files) }));
-  };
-
- 
-  const handleAttractionChange = (i, value) => {
-    const updated = [...formData.topAttractions];
-    updated[i].name = value;
-    setFormData((prev) => ({ ...prev, topAttractions: updated }));
-  };
-  const handleAttractionImage = (i, file) => {
-    const updated = [...formData.topAttractions];
-    updated[i].image = file;
-    setFormData((prev) => ({ ...prev, topAttractions: updated }));
-  };
-  const addAttraction = () => {
-    setFormData((prev) => ({
-      ...prev,
-      topAttractions: [...prev.topAttractions, { name: "", image: null }],
-    }));
-  };
-  const removeAttraction = (i) => {
-    const updated = [...formData.topAttractions];
-    updated.splice(i, 1);
-    setFormData((prev) => ({ ...prev, topAttractions: updated }));
-  };
-
-
-  const handleThingsToDoChange = (i, value) => {
-    const updated = [...formData.thingsToDo];
-    updated[i].title = value;
-    setFormData((prev) => ({ ...prev, thingsToDo: updated }));
-  };
-  const handleThingsToDoDescriptionChange = (i, value) => {
-    const updated = [...formData.thingsToDo];
-    updated[i].description = value;
-    setFormData((prev) => ({ ...prev, thingsToDo: updated }));
-  };
-  const handleThingsToDoImage = (i, file) => {
-    const updated = [...formData.thingsToDo];
-    updated[i].image = file;
-    setFormData((prev) => ({ ...prev, thingsToDo: updated }));
-  };
-  const addThingsToDo = () => {
-    setFormData((prev) => ({
-      ...prev,
-      thingsToDo: [...prev.thingsToDo, { title: "", description: "", image: null }],
-    }));
-  };
-  const removeThingsToDo = (i) => {
-    const updated = [...formData.thingsToDo];
-    updated.splice(i, 1);
-    setFormData((prev) => ({ ...prev, thingsToDo: updated }));
-  };
-
-
+  // ------------------ SUBMIT FORM ------------------
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -115,87 +80,97 @@ const ManagePlaces = () => {
       data.append("name", formData.name);
       data.append("description", formData.description);
       data.append("address", formData.address);
+      data.append("bestSeason", JSON.stringify([{ season: formData.bestSeason, description: "" }]));
+      data.append("travelTips", JSON.stringify([{ title: formData.travelTips, image: "" }]));
       data.append("travelStyles", JSON.stringify(formData.travelStyles));
 
-     
       formData.images.forEach((img) => {
         if (img instanceof File) data.append("images", img);
       });
 
- 
-      const topAttractionsPayload = formData.topAttractions.map((a) => ({ name: a.name }));
-      data.append("topAttractions", JSON.stringify(topAttractionsPayload));
-      formData.topAttractions.forEach((a) => {
-        if (a.image instanceof File) data.append("attractionImages", a.image);
-      });
+      const appendArrayData = (key, fileFieldName) => {
+        const payload = formData[key].map((item) => {
+          const copy = { ...item };
+          delete copy.image;
+          delete copy.existingImage;
+          return copy;
+        });
+        data.append(key, JSON.stringify(payload));
+        formData[key].forEach((item) => {
+          if (item.image instanceof File) data.append(fileFieldName, item.image);
+        });
+      };
 
-     
-      const thingsToDoPayload = formData.thingsToDo.map((t) => ({
-        title: t.title,
-        description: t.description,
-      }));
-      data.append("thingsToDo", JSON.stringify(thingsToDoPayload));
-      formData.thingsToDo.forEach((t) => {
-        if (t.image instanceof File) data.append("thingsToDoImages", t.image);
-      });
+      appendArrayData("topAttractions", "attractionImages");
+      appendArrayData("thingsToDo", "thingsToDoImages");
+      appendArrayData("localCulture", "localCultureImages");
+      appendArrayData("localCuisine", "localCuisineImages");
 
       const config = { headers: { Authorization: `Bearer ${token}` } };
 
-      let res;
       if (editPlace) {
-        res = await axios.put(`${API_URL}/${editPlace._id}`, data, config);
+        await axios.put(`${API_URL}/${editPlace._id}`, data, config);
         setMessage({ type: "success", text: "Place updated successfully!" });
       } else {
-        res = await axios.post(API_URL, data, config);
+        await axios.post(API_URL, data, config);
         setMessage({ type: "success", text: "Place added successfully!" });
       }
 
       setFormVisible(false);
-      setEditPlace(null);
-      setFormData({
-        name: "",
-        description: "",
-        address: "",
-        images: [],
-        travelStyles: [],
-        topAttractions: [{ name: "", image: null, existingImage: "" }],
-        thingsToDo: [{ title: "", description: "", image: null, existingImage: "" }],
-      });
-
+      resetForm();
       fetchPlaces();
     } catch (err) {
-      console.error("Submit error:", err);
-      setMessage({ type: "error", text: err.response?.data?.message || err.message });
+      console.error(err);
+      setMessage({
+        type: "error",
+        text: err.response?.data?.message || err.message,
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  
+  // ------------------ EDIT PLACE ------------------
   const handleEdit = (place) => {
     setEditPlace(place);
     setFormData({
-      name: place.name,
-      description: place.description,
-      address: place.address,
+      name: place.name || "",
+      description: place.description || "",
+      address: place.address || "",
       images: [],
+      bestSeason: place.bestSeason?.[0]?.season || "",
+      travelTips: place.travelTips?.[0]?.title || "",
       travelStyles: place.travelStyles || [],
       topAttractions: (place.topAttractions || []).map((a) => ({
-        name: a.name,
+        name: a.name || "",
+        type: a.type || "",
         image: null,
         existingImage: a.image || "",
       })),
       thingsToDo: (place.thingsToDo || []).map((t) => ({
-        title: t.title,
+        title: t.title || "",
         description: t.description || "",
+        travelStyle: t.travelStyle || "",
         image: null,
         existingImage: t.image || "",
+      })),
+      localCulture: (place.localCulture || []).map((c) => ({
+        festival: c.festival || "",
+        description: c.description || "",
+        image: null,
+        existingImage: c.image || "",
+      })),
+      localCuisine: (place.localCuisine || []).map((c) => ({
+        dish: c.dish || "",
+        description: c.description || "",
+        image: null,
+        existingImage: c.image || "",
       })),
     });
     setFormVisible(true);
   };
 
- 
+  // ------------------ DELETE PLACE ------------------
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this place?")) return;
     try {
@@ -206,20 +181,64 @@ const ManagePlaces = () => {
       setMessage({ type: "success", text: "Place deleted successfully!" });
       fetchPlaces();
     } catch (err) {
-      console.error("Delete error:", err);
+      console.error(err);
       setMessage({ type: "error", text: "Failed to delete place" });
     } finally {
       setLoading(false);
     }
   };
 
-  return (
-    <div className="p-6">
-      <h2 className="text-2xl font-bold mb-4">Manage Places</h2>
+  // ------------------ FILTER & SEARCH ------------------
+  const filteredPlaces = places.filter((p) => {
+    const matchSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchFilter = filterStyle ? p.travelStyles.includes(filterStyle) : true;
+    return matchSearch && matchFilter;
+  });
 
+  // ------------------ RETURN JSX ------------------
+  return (
+    <div className="p-6 bg-gray-50 min-h-screen">
+      <h2 className="text-3xl font-bold mb-6 text-gray-800">🏝️ Manage Places</h2>
+
+      {/* Toolbar */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6 bg-white p-4 rounded-xl shadow-md">
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          <input
+            type="text"
+            placeholder="🔍 Search places..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full sm:w-64 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-400"
+          />
+          <select
+            value={filterStyle}
+            onChange={(e) => setFilterStyle(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-lg text-gray-600 focus:outline-none focus:ring-2 focus:ring-cyan-400"
+          >
+            <option value="">Filter by Style</option>
+            <option value="City">City</option>
+            <option value="Food">Food</option>
+            <option value="Temple">Temple</option>
+            <option value="Adventure">Adventure</option>
+          </select>
+        </div>
+
+        <button
+          onClick={() => setFormVisible(!formVisible)}
+          className="px-5 py-2 bg-cyan-500 text-white font-semibold rounded-lg hover:bg-cyan-600 transition"
+        >
+          {formVisible
+            ? "Close Form"
+            : editPlace
+            ? "Edit Selected Place"
+            : "➕ Add New Place"}
+        </button>
+      </div>
+
+      {/* Message */}
       {message && (
         <p
-          className={`mb-2 p-2 rounded ${
+          className={`mb-4 p-3 rounded-lg text-center font-medium ${
             message.type === "success"
               ? "bg-green-100 text-green-700"
               : "bg-red-100 text-red-700"
@@ -229,77 +248,68 @@ const ManagePlaces = () => {
         </p>
       )}
 
-      <button
-        onClick={() => setFormVisible(!formVisible)}
-        className="mb-4 px-4 py-2 bg-cyan-500 text-white rounded hover:bg-cyan-600"
-      >
-        {formVisible ? "Close Form" : editPlace ? "Edit Selected Place" : "Add New Place"}
-      </button>
-
+      {/* Form */}
       {formVisible && (
-        <PlaceForm
-          formData={formData}
-          setFormData={setFormData}
-          handleInputChange={handleInputChange}
-          handlePlaceImages={handlePlaceImages}
-          handleAttractionChange={handleAttractionChange}
-          handleAttractionImage={handleAttractionImage}
-          addAttraction={addAttraction}
-          removeAttraction={removeAttraction}
-          handleThingsToDoChange={handleThingsToDoChange}
-          handleThingsToDoDescriptionChange={handleThingsToDoDescriptionChange}
-          handleThingsToDoImage={handleThingsToDoImage}
-          addThingsToDo={addThingsToDo}
-          removeThingsToDo={removeThingsToDo}
-          handleSubmit={handleSubmit}
-        />
+        <div className="mb-6 bg-white rounded-xl shadow-md p-5">
+          <PlaceForm
+            formData={formData}
+            setFormData={setFormData}
+            handleSubmit={handleSubmit}
+          />
+        </div>
       )}
 
+      {/* Table */}
       {loading ? (
         <div className="flex justify-center items-center my-4">
           <Loader />
         </div>
       ) : (
-        <table className="w-full border">
-          <thead>
-            <tr className="bg-gray-200">
-              <th className="border p-2">Name</th>
-              <th className="border p-2">Address</th>
-              <th className="border p-2">Travel Styles</th>
-              <th className="border p-2">Top Attractions</th>
-              <th className="border p-2">Things To Do</th>
-              <th className="border p-2">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {places.map((place) => (
-              <tr key={place._id} className="text-center hover:bg-gray-100 cursor-pointer">
-                <td className="border p-2">{place.name}</td>
-                <td className="border p-2">{place.address}</td>
-                <td className="border p-2">{(place.travelStyles || []).join(", ")}</td>
-                <td className="border p-2">{(place.topAttractions || []).map((a) => a.name).join(", ")}</td>
-                <td className="border p-2">{(place.thingsToDo || []).map((t) => t.title).join(", ")}</td>
-                <td className="border p-2">
-                  <button
-                    onClick={() => handleEdit(place)}
-                    className="bg-yellow-500 text-white px-2 py-1 rounded mr-2 hover:bg-yellow-600"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleDelete(place._id)}
-                    className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600"
-                  >
-                    Delete
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <PlaceTable
+          places={filteredPlaces}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          onView={(place) => setSelectedPlace(place)}
+        />
+      )}
+
+      {/* Details Modal */}
+      {selectedPlace && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-xl shadow-xl w-[90%] max-w-2xl relative">
+            <button
+              className="absolute top-2 right-3 text-gray-500 hover:text-black text-lg"
+              onClick={() => setSelectedPlace(null)}
+            >
+              ✖
+            </button>
+            <h3 className="text-2xl font-bold mb-2">{selectedPlace.name}</h3>
+            <p className="text-gray-700 mb-3">{selectedPlace.description}</p>
+            <p className="text-gray-500 text-sm mb-3">
+              📍 {selectedPlace.address}
+            </p>
+            {selectedPlace.travelStyles?.length > 0 && (
+              <p className="text-sm mb-2">
+                <span className="font-semibold text-gray-700">Styles:</span>{" "}
+                {selectedPlace.travelStyles.join(", ")}
+              </p>
+            )}
+            {selectedPlace.topAttractions?.length > 0 && (
+              <div className="mt-3">
+                <h4 className="font-semibold mb-1">Top Attractions:</h4>
+                <ul className="list-disc pl-5 text-sm text-gray-700">
+                  {selectedPlace.topAttractions.map((a, i) => (
+                    <li key={i}>{a.name} ({a.type})</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );
 };
 
 export default ManagePlaces;
+

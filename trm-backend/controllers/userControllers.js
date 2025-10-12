@@ -72,14 +72,38 @@ export const getMyProfile = async (req, res) => {
 
 export const updateUser = async (req, res) => {
   try {
+    const { userId } = req.params;
+    const updateData = req.body;
+
+    // Only allow certain fields to be updated (excluding role)
+    const allowedUpdates = ["name", "email", "status"];
+    const filteredData = {};
+    Object.keys(updateData).forEach((key) => {
+      if (allowedUpdates.includes(key)) filteredData[key] = updateData[key];
+    });
+
+    // Prevent deactivating an Admin
+    if (filteredData.status === "inactive") {
+      const user = await UserModel.findById(userId);
+      if (!user) return res.status(404).json({ success: false, message: "User not found" });
+      if (user.role === "Admin") {
+        return res.status(403).json({ success: false, message: "Admin cannot be deactivated" });
+      }
+    }
+
     const updatedUser = await UserModel.findByIdAndUpdate(
-      req.params.userId,
-      req.body,
+      userId,
+      filteredData,
       { new: true }
     ).select("-password");
+
+    if (!updatedUser) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
     res.json({ success: true, data: updatedUser });
   } catch (error) {
-    res.json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
