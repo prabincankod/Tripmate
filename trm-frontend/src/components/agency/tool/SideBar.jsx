@@ -21,8 +21,7 @@ const Sidebar = () => {
     { id: "packages", label: "Packages", icon: Package, path: "/agency/manage-package" },
    
     { id: "profile", label: "Profile", icon: User, path: "/agency/manage-profile" },
-    { id: "notifications", label: "Notifications", icon: Bell, path: "/dashboard/agency/notifications" },
-    
+  
   ];
 
  const handleLogout = () => {

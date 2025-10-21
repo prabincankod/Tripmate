@@ -279,3 +279,21 @@ export const setNextTrip = async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 };
+export const getNextTrip = async (req, res) => {
+  try {
+    const journey = await TravelJourney.findOne({ userId: req.user.id })
+      .populate({
+        path: "nextTrip.placeId",
+        select: "name image location category description",
+      });
+
+    if (!journey || !journey.nextTrip) {
+      return res.json({ success: true, nextTrip: null });
+    }
+
+    res.json({ success: true, nextTrip: journey.nextTrip });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+};

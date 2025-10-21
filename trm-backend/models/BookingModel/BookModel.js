@@ -36,17 +36,32 @@ const bookingSchema = new mongoose.Schema(
     },
 
     status: {
-      type: String,
-      enum: ["Pending", "Paid", "Cancelled", "Refunded"],
-      default: "Pending",
-    },
+  type: String,
+  enum: ["Pending", "Paid", "Cancelled", "Refunded", "Confirmed"],
+  default: "Pending",
+},
+
+    arrived: { type: Boolean, default: false },
+    refundInfo: {
+  refundedAt: Date,
+  refundAmount: Number,
+  refundMethod: String,
+},
+
+
 
     paymentInfo: {
       transactionId: { type: String },
       method: { type: String }, // e.g. "Card", "Esewa", "Khalti"
       paidAt: { type: Date },
     },
+    remarks: {
+      type: String,
+      default: "",
+    },
   },
+
+
   { timestamps: true }
 );
 

@@ -3,7 +3,12 @@ import PlaceCard from "./PlaceCard";
 
 const PlaceList = ({ places }) => {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div
+      className="grid gap-6"
+      style={{
+        gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
+      }}
+    >
       {places.map((place) => (
         <PlaceCard key={place._id} place={place} />
       ))}
@@ -12,3 +17,4 @@ const PlaceList = ({ places }) => {
 };
 
 export default PlaceList;
+

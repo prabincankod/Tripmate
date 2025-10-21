@@ -12,7 +12,7 @@ const HomePackagesSection = () => {
     const fetchPackages = async () => {
       try {
         const res = await axios.get(
-          "http://localhost:4000/api/packages?limit=3&sortBy=bookingsCount"
+          "http://localhost:4000/api/packages?limit=4&sortBy=bookingsCount"
         );
         setPackages(res.data.data || []);
       } catch (err) {
@@ -35,9 +35,13 @@ const HomePackagesSection = () => {
         Popular Travel Packages
       </h2>
 
-      <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+      <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {packages.map((pkg) => (
-          <PackageCard key={pkg._id} pkg={pkg} onClick={() => navigate(`/packages/${pkg._id}`)} />
+          <PackageCard
+            key={pkg._id}
+            pkg={pkg}
+            onClick={() => navigate(`/packages/${pkg._id}`)}
+          />
         ))}
       </div>
     </section>
@@ -49,7 +53,7 @@ const PackageCard = ({ pkg, onClick }) => {
 
   return (
     <div
-      className="relative flex flex-col bg-white rounded-2xl shadow-md hover:shadow-xl overflow-hidden cursor-pointer transition-transform hover:-translate-y-1 h-full"
+      className="relative flex flex-col bg-white rounded-xl shadow-md hover:shadow-lg overflow-hidden cursor-pointer transition-transform hover:-translate-y-1 h-full"
       onClick={onClick}
     >
       {/* Like Button */}
@@ -58,40 +62,44 @@ const PackageCard = ({ pkg, onClick }) => {
           e.stopPropagation();
           setLiked(!liked);
         }}
-        className="absolute top-3 right-3 bg-white p-2 rounded-full shadow hover:scale-110 transition z-10"
+        className="absolute top-2 right-2 bg-white p-1 rounded-full shadow hover:scale-110 transition z-10"
       >
-        <Heart className={`w-5 h-5 ${liked ? "text-red-500" : "text-gray-400"}`} />
+        <Heart className={`w-4 h-4 ${liked ? "text-red-500" : "text-gray-400"}`} />
       </button>
 
       {/* Image */}
-      <div className="h-36 w-full overflow-hidden">
+      <div className="h-32 w-full overflow-hidden">
         <img
-          src={pkg.image ? `http://localhost:4000${pkg.image}` : "https://via.placeholder.com/300x150"}
+          src={
+            pkg.image
+              ? `http://localhost:4000${pkg.image}`
+              : "https://via.placeholder.com/300x150"
+          }
           alt={pkg.title}
           className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
         />
       </div>
 
       {/* Card Body */}
-      <div className="flex flex-col flex-grow p-4">
+      <div className="flex flex-col flex-grow p-3">
         {/* Agency */}
         <p className="text-xs font-semibold text-green-700 mb-1">
           {pkg.agency?.name || "Travel Agency"}
         </p>
 
         {/* Title */}
-        <h3 className="text-md font-semibold text-gray-800 mb-1 line-clamp-2">
+        <h3 className="text-sm font-semibold text-gray-800 mb-1 line-clamp-2">
           {pkg.name || pkg.title}
         </h3>
 
         {/* Duration */}
-        <div className="flex items-center text-gray-500 text-sm mb-2 gap-1">
-          <Calendar className="w-4 h-4" /> {pkg.duration} days
+        <div className="flex items-center text-gray-500 text-xs mb-1 gap-1">
+          <Calendar className="w-3 h-3" /> {pkg.duration} days
         </div>
 
         {/* Highlights */}
         {pkg.highlights?.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-2">
+          <div className="flex flex-wrap gap-1 mb-2">
             {pkg.highlights.slice(0, 2).map((place, idx) => (
               <span
                 key={idx}
@@ -109,15 +117,14 @@ const PackageCard = ({ pkg, onClick }) => {
         )}
 
         {/* Price */}
-        <p className="text-lg font-bold text-gray-900 mb-2">
-          Rs. {pkg.price?.toLocaleString()} <span className="text-xs text-gray-500">/person</span>
+        <p className="text-sm font-bold text-gray-900 mb-1">
+          Rs. {pkg.price?.toLocaleString()}{" "}
+          <span className="text-xs text-gray-500">/person</span>
         </p>
 
-        {/* Book Now */}
-        <button
-          className="mt-auto bg-blue-700 text-white py-2 rounded-lg text-sm hover:bg-blue-800 transition"
-        >
-          ViewDetails
+        {/* Book Now / View Details */}
+        <button className="mt-auto bg-green-900 text-white py-1.5 rounded-lg text-xs hover:bg-blue-800 transition">
+          View Details
         </button>
       </div>
     </div>
@@ -125,13 +132,3 @@ const PackageCard = ({ pkg, onClick }) => {
 };
 
 export default HomePackagesSection;
-
-
-
-
-
-
-
-
-
-

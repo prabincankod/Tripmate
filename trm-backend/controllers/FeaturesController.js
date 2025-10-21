@@ -1,30 +1,59 @@
 import Place from "../models/PlaceModel.js";
-import Hotel from "../models/HotelModel.js"; // make sure you have this model
-export const getFeaturedPlacesWithPopularHotels = async (req, res) => {
-  try {
-    // 1️⃣ Get featured places
-    const places = await Place.find({ isFeatured: true }).limit(5);
+import Hotel from "../models/HotelModel.js";
+import Review from "../models/reviewModel.js";
 
-    // 2️⃣ Attach top hotels of each place
+export const getFeaturedPlacesWithHotels = async (req, res) => {
+  try {
+    // 1️⃣ Fetch featured places (limit 2)
+    let places = await Place.find({ isFeatured: true }).limit(2);
+
+    // 2️⃣ Fallback: if no featured places, take top 2 by rating & reviews
+    if (!places.length) {
+      places = await Place.find()
+        .sort({ averageRating: -1, reviewCount: -1 })
+        .limit(2);
+    }
+
+    // 3️⃣ Attach top 3 hotels for each place
     const placesWithHotels = await Promise.all(
       places.map(async (place) => {
-        const hotels = await Hotel.find({ place: place._id })
-          .sort({ averageRating: -1, totalReviews: -1 })
-          .limit(3);
-        return { ...place.toObject(), hotels };
+        const hotels = await Hotel.find({ placeId: place._id });
+
+        const hotelsWithReviews = await Promise.all(
+          hotels.map(async (hotel) => {
+            const reviews = await Review.find({ hotelId: hotel._id });
+            const reviewCount = reviews.length;
+            const averageRating = reviewCount
+              ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviewCount
+              : 0;
+
+            return { ...hotel.toObject(), averageRating, reviewCount };
+          })
+        );
+
+        // Sort hotels by averageRating first, then reviewCount
+        const topHotels = hotelsWithReviews
+          .sort(
+            (a, b) =>
+              b.averageRating - a.averageRating || b.reviewCount - a.reviewCount
+          )
+          .slice(0, 3);
+
+        return {
+          _id: place._id,
+          name: place.name,
+          description: place.description,
+          images: place.images,
+          averageRating: place.averageRating || 0,
+          reviewCount: place.reviewCount || 0,
+          hotels: topHotels,
+        };
       })
     );
 
-    // 3️⃣ Optionally get top hotels across all featured places
-    const allPlaceIds = places.map(p => p._id);
-    const topHotels = await Hotel.find({ place: { $in: allPlaceIds } })
-      .sort({ averageRating: -1, totalReviews: -1 })
-      .limit(5);
-
-    res.status(200).json({ places: placesWithHotels, topHotels });
+    res.json({ success: true, places: placesWithHotels });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Error fetching featured places", error: err.message });
+    console.error("Error fetching featured places with hotels:", err);
+    res.status(500).json({ success: false, message: err.message });
   }
 };
-

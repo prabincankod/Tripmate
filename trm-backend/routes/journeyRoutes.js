@@ -10,6 +10,7 @@ import {
   unsavePlace,
   setNextTrip,
   getSavedPlaces,
+  getNextTrip
 } from "../controllers/JourneyController.js"
 
 import { checkAuthorization } from "../middleware/checkAuthorization.js";
@@ -37,5 +38,8 @@ router.delete("/unsave-place", unsavePlace);
 
 
 router.post("/next-trip", setNextTrip);
+// Get next trip
+router.get("/next-trip", getNextTrip);
+
 
 export default router;

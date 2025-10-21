@@ -28,4 +28,4 @@ const agencySchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-export default mongoose.model("Agency", agencySchema);
+export default mongoose.model("TravelAgency", agencySchema);

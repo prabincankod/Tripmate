@@ -22,7 +22,7 @@ router.get("/", getPlaces);
 router.get("/travel-style/:style", getPlacesByTravelStyle);
 router.get("/search/:query", searchPlaces);
 router.get("/nearby/search", getNearbyPlaces);
-router.get("/travel-style/:style", getPlacesByTravelStyle);
+
 
 
 router.get("/:id/weather", getWeatherForPlace);

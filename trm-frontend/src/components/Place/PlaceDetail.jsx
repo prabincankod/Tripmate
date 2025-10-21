@@ -98,8 +98,6 @@ const PlaceDetail = () => {
 
   // Card Component
   const Card = ({ image, title, description, data, type }) => {
-    const navigate = useNavigate();
-
     const previewText =
       description && description.length > 100
         ? description.slice(0, 100) + "..."
@@ -121,7 +119,9 @@ const PlaceDetail = () => {
             {description && description.length > 100 && (
               <span
                 className="text-gray-500 hover:text-gray-700 cursor-pointer"
-                onClick={() => navigate("/info", { state: { selectedItem: data, type } })}
+                onClick={() =>
+                  navigate("/info", { state: { selectedItem: data, type } })
+                }
               >
                 Read More
               </span>
@@ -170,7 +170,7 @@ const PlaceDetail = () => {
           onChange={(saved) => setIsSaved(saved)}
         />
 
-        {/* Place Rating on top-right */}
+        {/* Place Rating */}
         {place.averageRating && (
           <div className="absolute top-4 right-4 bg-white/80 px-4 py-2 rounded-lg flex items-center gap-2 shadow-lg z-10">
             <Star className="text-yellow-400" />
@@ -194,10 +194,11 @@ const PlaceDetail = () => {
         </div>
       </div>
 
-      {/* Main content */}
-      <div className="flex flex-col lg:flex-row gap-6 -mt-16 relative z-20 bg-white rounded-t-3xl shadow-lg p-6 max-w-6xl mx-auto">
-        {/* Left Content */}
-        <div className="flex-1 space-y-6">
+      {/* Main content with sticky right sidebar map */}
+      <div className="flex flex-col lg:flex-row gap-6 max-w-7xl mx-auto p-6">
+        {/* Left: Main Content */}
+        <div className="flex-1 flex flex-col gap-6">
+          {/* Description */}
           <p className="text-gray-700 leading-relaxed">{place.description}</p>
 
           {/* Top Attractions */}
@@ -257,7 +258,7 @@ const PlaceDetail = () => {
             </div>
           )}
 
-          {/* Local Culture */}
+          {/* Other sections */}
           {place.localCulture?.length > 0 && (
             <div>
               <h2 className="text-2xl font-semibold mb-4">Local Culture</h2>
@@ -276,7 +277,6 @@ const PlaceDetail = () => {
             </div>
           )}
 
-          {/* Local Cuisine */}
           {place.localCuisine?.length > 0 && (
             <div>
               <h2 className="text-2xl font-semibold mb-4">Local Cuisine</h2>
@@ -295,7 +295,6 @@ const PlaceDetail = () => {
             </div>
           )}
 
-          {/* Best Season */}
           {place.bestSeason?.length > 0 && (
             <div>
               <h2 className="text-2xl font-semibold mb-4">Best Seasons to Visit</h2>
@@ -312,7 +311,6 @@ const PlaceDetail = () => {
             </div>
           )}
 
-          {/* Travel Tips */}
           {place.travelTips?.length > 0 && (
             <div>
               <h2 className="text-2xl font-semibold mb-4">Travel Tips</h2>
@@ -333,7 +331,7 @@ const PlaceDetail = () => {
             }
             className="mb-8 p-4 border rounded-xl shadow-sm flex items-center gap-4 cursor-pointer hover:shadow-md transition"
           >
-            <div className=" text-white p-3 rounded-full text-xl flex items-center justify-center"></div>
+            <div className="text-white p-3 rounded-full text-xl flex items-center justify-center"></div>
             <div>
               <h3 className="text-lg font-bold text-green-900">
                 Plan Your Next Trip ?{" "}
@@ -354,9 +352,9 @@ const PlaceDetail = () => {
           </div>
         </div>
 
-        {/* Right: Map Sidebar */}
+        {/* Right Sidebar Map (Sticky and Scrollable) */}
         {place.location?.coordinates?.length === 2 && (
-          <div className="w-full lg:w-1/3 h-80 rounded-xl overflow-hidden shadow-md">
+          <div className="w-full lg:w-1/3 h-[600px] sticky top-24 rounded-xl overflow-hidden shadow-md">
             <MapView
               lat={place.location.coordinates[1]}
               long={place.location.coordinates[0]}
@@ -370,3 +368,5 @@ const PlaceDetail = () => {
 };
 
 export default PlaceDetail;
+
+

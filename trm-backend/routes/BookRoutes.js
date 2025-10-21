@@ -29,7 +29,7 @@ router.get("/my-bookings", checkAuthorization, checkLoggedInUser, getUserBooking
 
 // ✅ Get agency bookings (only agency)
 router.get("/agency", checkAuthorization, checkLoggedInUser, (req, res, next) => {
-  if (req.user.role !== "agency") {
+  if (req.user.role !== "TravelAgency") {
     return res.status(403).json({ success: false, message: "Only agencies can view their bookings" });
   }
   next();
@@ -40,7 +40,7 @@ router.put("/:id/cancel", checkAuthorization, checkLoggedInUser, cancelBooking);
 
 // ✅ Update booking status by agency (confirm / cancel)
 router.put("/:bookingId/status", checkAuthorization, checkLoggedInUser, (req, res, next) => {
-  if (req.user.role !== "agency") {
+  if (req.user.role !== "TravelAgency") {
     return res.status(403).json({ success: false, message: "Only agencies can update booking status" });
   }
   next();

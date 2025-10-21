@@ -43,7 +43,7 @@ const travelPackageSchema = new mongoose.Schema(
     policy: policySchema,
 
     // ------------------- AGENCY -------------------
-    agency: { type: mongoose.Schema.Types.ObjectId, ref: "Agency", required: true },
+    agency: { type: mongoose.Schema.Types.ObjectId, ref: "TravelAgency", required: true },
 
     // ------------------- METADATA -------------------
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },

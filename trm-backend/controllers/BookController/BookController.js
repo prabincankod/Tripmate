@@ -107,87 +107,139 @@ export const getUserBookings = async (req, res) => {
   }
 };
 
-// ✅ Cancel booking (User or Admin)
+// Cancel booking (user, agency, or admin)
 export const cancelBooking = async (req, res) => {
   try {
     const bookingId = req.params.id;
     const userId = req.user?._id;
+    const { remark, refundMethod } = req.body;
 
     if (!userId) {
       return res.status(401).json({ success: false, message: "User must be logged in" });
     }
 
-    const booking = await Booking.findById(bookingId);
+    const booking = await Booking.findById(bookingId).populate("travelPackage");
     if (!booking) {
       return res.status(404).json({ success: false, message: "Booking not found" });
     }
 
-    // Only owner or admin can cancel
-    if (booking.user.toString() !== userId.toString() && !req.user.isAdmin) {
+    const isOwner = booking.user.toString() === userId.toString();
+    const isAdmin = req.user.isAdmin;
+    const isAgencyOwner =
+      req.user.role === "TravelAgency" &&
+      booking.travelPackage.createdBy?.toString() === userId.toString();
+
+    if (!isOwner && !isAdmin && !isAgencyOwner) {
       return res.status(403).json({ success: false, message: "Not authorized to cancel this booking" });
     }
 
-    booking.status = "Cancelled";
+    const hasPaid = !!booking.paymentInfo?.paidAt;
+
+    if (hasPaid || isAdmin || isAgencyOwner) {
+      // Refund if paid
+      booking.status = "Refunded";
+      booking.refundInfo = {
+        refundedAt: new Date(),
+        refundAmount: booking.totalPrice,
+        refundMethod: refundMethod || "N/A",
+      };
+    } else {
+      booking.status = "Cancelled";
+      // Decrease booking count
+      await TravelPackage.findByIdAndUpdate(booking.travelPackage._id, { $inc: { bookingsCount: -1 } });
+    }
+
+    if (remark) booking.remarks = remark;
+
     await booking.save();
 
-    // Decrement package booking count
-    await TravelPackage.findByIdAndUpdate(booking.travelPackage, { $inc: { bookingsCount: -1 } });
-
-    res.status(200).json({ success: true, message: "Booking cancelled successfully", data: booking });
+    res.status(200).json({ success: true, message: `Booking ${booking.status.toLowerCase()} successfully`, data: booking });
   } catch (error) {
     console.error("Cancel booking error:", error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// ✅ Agency updates booking status (Confirm/Cancel)
+// Agency or admin updates booking status (Confirm/Cancel)
 export const updateBookingStatusByAgency = async (req, res) => {
   try {
     const { bookingId } = req.params;
-    const { action } = req.body;
+    const { action, remark, refundMethod } = req.body;
 
-    const booking = await Booking.findById(bookingId).populate("travelPackage", "createdBy");
-    if (!booking) {
-      return res.status(404).json({ success: false, message: "Booking not found" });
+    const booking = await Booking.findById(bookingId).populate("travelPackage");
+    if (!booking) return res.status(404).json({ success: false, message: "Booking not found" });
+
+    const isAdmin = req.user.isAdmin;
+    const isAgencyOwner =
+      req.user.role === "TravelAgency" &&
+      booking.travelPackage.createdBy?.toString() === req.user._id.toString();
+
+    if (!isAdmin && !isAgencyOwner) {
+      return res.status(403).json({ success: false, message: "Only agencies or admins can update booking status" });
     }
 
-    // Only the agency who created the package can update status
-    if (booking.travelPackage.createdBy.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ success: false, message: "Not authorized" });
+    const hasPaid = !!booking.paymentInfo?.paidAt;
+
+    if (action === "confirm") {
+      booking.status = "Confirmed";
+    } else if (action === "cancel") {
+      if (hasPaid || isAdmin || isAgencyOwner) {
+        booking.status = "Refunded";
+        booking.refundInfo = {
+          refundedAt: new Date(),
+          refundAmount: booking.totalPrice,
+          refundMethod: refundMethod || "N/A",
+        };
+      } else {
+        booking.status = "Cancelled";
+        await TravelPackage.findByIdAndUpdate(booking.travelPackage._id, { $inc: { bookingsCount: -1 } });
+      }
+    } else {
+      return res.status(400).json({ success: false, message: "Invalid action" });
     }
 
-    if (action === "confirm") booking.status = "Confirmed";
-    else if (action === "cancel") booking.status = "Cancelled";
-    else return res.status(400).json({ success: false, message: "Invalid action" });
+    if (remark) booking.remarks = remark;
 
     await booking.save();
 
-    res.status(200).json({ success: true, message: `Booking ${booking.status}`, booking });
+    res.status(200).json({ success: true, message: `Booking ${booking.status.toLowerCase()} successfully`, data: booking });
   } catch (error) {
     console.error("Error updating booking status:", error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
-// ✅ Get bookings for agency's packages
+// ------------------- Get Agency Bookings -------------------
 export const getAgencyBookings = async (req, res) => {
   try {
     const agencyId = req.user?._id;
-    if (!agencyId) {
+    if (!agencyId)
       return res.status(401).json({ success: false, message: "Agency must be logged in" });
-    }
 
-    // Find bookings where the package was created by this agency
+    // Find bookings where the package belongs to this agency
     const bookings = await Booking.find()
       .populate({
         path: "travelPackage",
-        match: { createdBy: agencyId }, // only packages created by this agency
-        select: "title price duration createdBy",
+        match: { agency: agencyId },
+        select: "name price duration agency",
       })
-      .populate("user", "name email")
+      .populate("user", "name email phoneNumber")
       .sort({ createdAt: -1 });
 
     // Filter out bookings where travelPackage was not matched
-    const agencyBookings = bookings.filter(b => b.travelPackage);
+    const agencyBookings = bookings
+      .filter(b => b.travelPackage)
+      .map(b => {
+        // Compute isNew (created within last 24 hours)
+        const now = new Date();
+        const created = new Date(b.createdAt);
+        const hoursDiff = (now - created) / (1000 * 60 * 60);
+        const isNew = hoursDiff <= 24;
+
+        return {
+          ...b.toObject(),
+          isNew,
+        };
+      });
 
     res.status(200).json({ success: true, data: agencyBookings });
   } catch (error) {
@@ -195,4 +247,3 @@ export const getAgencyBookings = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
-

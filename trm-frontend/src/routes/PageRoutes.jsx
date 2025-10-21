@@ -107,8 +107,7 @@ const PageRoutes = () => {
            <Route path="/admin/overview" element={<SidebarWrapper><AdminOverview /></SidebarWrapper>} />
          
               <Route path="/profile" element={<MainLayout><Profile /></MainLayout>} />
-              <Route path="/agency/profile" element={<Profile />} />
-              
+           
               <Route path="/admin/profile"element={<SidebarWrapper><AdminProfile /></SidebarWrapper>}
 />
 

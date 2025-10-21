@@ -5,29 +5,37 @@ export const getHomeRecommendations = async (req, res) => {
   try {
     const userId = req.user._id;
 
-    const user = await User.findById(userId).populate("visitedPlaces");
+    // Fetch user and visited places
+    const user = await UserModel.findById(userId).populate("visitedPlaces");
     if (!user) return res.status(404).json({ success: false, message: "User not found" });
 
-    const userStyles = user.clickHistory.map(c => c.travelStyle);
+    // Extract travel styles from travelClicks
+    const clicksMap = user.travelClicks || {};
+    const userStyles = Object.keys(clicksMap); // array of style names
+
+    // Safely get visited place IDs
+    const visitedPlaceIds = (user.visitedPlaces || []).map(p => p._id);
 
     // 1️⃣ Style-based recommendations
-    const styleRecommendations = await Place.find({
-      _id: { $nin: user.visitedPlaces.map(p => p._id) },
-      travelStyles: { $in: userStyles }
-    }).limit(10);
+    let styleRecommendations = [];
+    if (userStyles.length > 0) {
+      styleRecommendations = await Place.find({
+        _id: { $nin: visitedPlaceIds },
+        travelStyles: { $in: userStyles }
+      }).limit(10);
+    }
 
-    // 2️⃣ Similar users
-    const similarUsers = await User.find({
+    // 2️⃣ Recommendations from similar users
+    const similarUsers = await UserModel.find({
       _id: { $ne: userId },
-      "clickHistory.travelStyle": { $in: userStyles }
+      "travelClicks": { $exists: true, $ne: {} } // at least one click
     }).populate("visitedPlaces");
 
     let otherUserPlaces = [];
     similarUsers.forEach(u => {
+      const uVisited = u.visitedPlaces || [];
       otherUserPlaces.push(
-        ...u.visitedPlaces.filter(
-          p => !user.visitedPlaces.some(vp => vp._id.equals(p._id))
-        )
+        ...uVisited.filter(p => !visitedPlaceIds.includes(p._id))
       );
     });
 
@@ -40,7 +48,7 @@ export const getHomeRecommendations = async (req, res) => {
 
     // 3️⃣ Top-rated fallback
     const topRated = await Place.find({
-      _id: { $nin: user.visitedPlaces.map(p => p._id) }
+      _id: { $nin: visitedPlaceIds }
     }).sort({ averageRating: -1 }).limit(3);
 
     // 4️⃣ Combine + Deduplicate + Shuffle
@@ -49,6 +57,7 @@ export const getHomeRecommendations = async (req, res) => {
     const shuffled = uniqueCombined.sort(() => 0.5 - Math.random());
 
     res.json({ success: true, recommendations: shuffled });
+
   } catch (err) {
     console.error("Error fetching recommendations:", err);
     res.status(500).json({ success: false, message: "Error fetching recommendations" });
