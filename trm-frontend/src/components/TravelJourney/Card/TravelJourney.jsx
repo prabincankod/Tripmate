@@ -120,18 +120,27 @@ const TravelJourney = () => {
             <p className="text-gray-500">You haven’t saved any places yet.</p>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {savedPlaces.map(place => (
-                <div key={place._id} className="relative border rounded-lg p-3 shadow-sm">
-                  <img
-                    src={place.image || "https://via.placeholder.com/150"}
-                    alt={place.name}
-                    className="w-full h-40 object-cover rounded"
-                  />
-                  <h3 className="mt-2 font-bold">{place.name}</h3>
-                  <p className="text-sm text-gray-600">{place.location}</p>
-                  <SavePlaceButton place={place} onChange={fetchSavedPlaces} />
-                </div>
-              ))}
+       {savedPlaces.length > 0 &&
+  savedPlaces.map((place) => 
+    place.placeId && ( // only render if placeId exists
+      <div key={place._id} className="relative border rounded-lg p-3 shadow-sm">
+        <img
+          src={
+            place.placeId.images
+              ? `http://localhost:4000${place.placeId.images[0]}`
+              : "https://via.placeholder.com/150"
+          }
+          alt={place.placeId.name}
+          className="w-full h-40 object-cover rounded"
+        />
+        <h3 className="mt-2 font-bold">{place.placeId.name}</h3>
+        {/* <p className="text-sm text-gray-600">{place.placeId.location}</p> */}
+        <SavePlaceButton place={place} onChange={fetchSavedPlaces} />
+      </div>
+    )
+  )
+}
+
             </div>
           )}
         </div>
@@ -150,9 +159,9 @@ const TravelJourney = () => {
                 await fetchJourney(); 
               }}
             />
-          ) : nextTrip ? (
-            <div className="border rounded-lg p-4 shadow-md bg-green-50">
-              <h3 className="font-semibold mb-2">Your Next Trip</h3>
+          ) : nextTrip ? ( nextTrip.placeId && (
+   <div className="border rounded-lg p-4 shadow-md bg-green-50">
+              <h3 className="font-semibold mb-2">Your Next Trip {nextTrip.placeId.name}</h3>
               <p>
                 <strong>Start:</strong> {new Date(nextTrip.startDate).toLocaleDateString()}
               </p>
@@ -176,6 +185,8 @@ const TravelJourney = () => {
                 Edit / Add Trip
               </button>
             </div>
+          )
+         
           ) : (
             <p className="text-gray-500">No next trip planned yet.</p>
           )}

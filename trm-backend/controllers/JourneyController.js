@@ -8,8 +8,8 @@ export const getTravelJourney = async (req, res) => {
   try {
     const journey = await TravelJourney.findOne({ userId: req.user.id })
       .populate("savedPlaces.placeId")
-      .populate("nextTrip.placeId")
-      .populate("nextTrip.packageSuggestions.packageId");
+      .populate("nextTrip.placeId");
+    // .populate("nextTrip.packageSuggestions.packageId");
 
     if (!journey) {
       return res.json({
@@ -111,8 +111,12 @@ export const isSavedPlace = async (req, res) => {
     if (!user) return res.status(404).json({ message: "User not found" });
 
     // Ensure savedPlaces is always an array
-    const savedPlaces = Array.isArray(user.savedPlaces) ? user.savedPlaces : [];
+    const journey =await  TravelJourney.findOne({'userId' : userId}).exec()
+    
 
+    const savedPlaces = journey.savedPlaces
+
+    
     // Check if placeId exists in savedPlaces
     const isSaved = savedPlaces.some((p) =>
       p.placeId ? p.placeId.toString() === placeId : p.toString() === placeId
@@ -125,13 +129,13 @@ export const isSavedPlace = async (req, res) => {
   }
 };
 
-
 export const getSavedPlaces = async (req, res) => {
   try {
     const journey = await TravelJourney.findOne({ userId: req.user.id })
       .populate({
         path: "savedPlaces.placeId",
-        model: "Place", 
+        model: "Place",
+        match: { _id: { $ne: null } }, // Only populate if placeId exists
       })
       .exec();
 
@@ -174,8 +178,15 @@ export const unsavePlace = async (req, res) => {
         .json({ success: false, message: "Journey not found" });
 
     journey.savedPlaces = journey.savedPlaces.filter(
-      (p) => p.placeId.toString() !== placeId
+      (p) => p._id.toString() !== placeId
     );
+
+
+    console.log('unsaved', journey.savedPlaces)
+
+
+
+    
 
     await journey.save();
 
@@ -281,11 +292,12 @@ export const setNextTrip = async (req, res) => {
 };
 export const getNextTrip = async (req, res) => {
   try {
-    const journey = await TravelJourney.findOne({ userId: req.user.id })
-      .populate({
-        path: "nextTrip.placeId",
-        select: "name image location category description",
-      });
+    const journey = await TravelJourney.findOne({
+      userId: req.user.id,
+    }).populate({
+      path: "nextTrip.placeId",
+      select: "name image location category description",
+    });
 
     if (!journey || !journey.nextTrip) {
       return res.json({ success: true, nextTrip: null });

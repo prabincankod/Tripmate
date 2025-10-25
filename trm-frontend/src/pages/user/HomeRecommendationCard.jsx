@@ -1,56 +1,82 @@
-// src/pages/user/HomeRecommendationCard.jsx
 import React from "react";
 
 const HomeRecommendationCard = ({ rec, navigate }) => {
+  const title = rec.name || rec.dish || rec.title || "Untitled";
+  const description = rec.description || "No description available.";
+
+  const backendBaseUrl = "http://localhost:4000";
+
+  const imageSrc = rec.image?.startsWith("http")
+    ? rec.image
+    : rec.image
+    ? `${backendBaseUrl}${rec.image}`
+    : rec.images?.[0]?.url
+    ? rec.images[0].url
+    : rec.images?.[0]?.startsWith("http")
+    ? rec.images[0]
+    : rec.images?.[0]
+    ? `${backendBaseUrl}${rec.images[0]}`
+    : "/placeholder.png";
+
+  const truncatedDescription =
+    description.length > 120 ? description.slice(0, 120) + "..." : description;
+
+  const handleCardClick = () => {
+    if (rec.type?.toLowerCase() === "city" || rec.category?.toLowerCase() === "place") {
+      navigate("/info", { state: { selectedItem: rec, type: "Place" } });
+    } else {
+      navigate("/info", { state: { selectedItem: rec, type: rec.type || "Recommendation" } });
+    }
+  };
+
+  const handleReadMore = (e) => {
+    e.stopPropagation();
+    handleCardClick();
+  };
+
   return (
-    <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition w-72 flex flex-col overflow-hidden cursor-pointer">
-      
-      {/* Image */}
-      {rec.images?.length > 0 ? (
+    <div
+      onClick={handleCardClick}
+      className="w-72 bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-transform hover:scale-[1.02] duration-200 flex flex-col cursor-pointer"
+    >
+      {imageSrc && (
         <img
-          src={`http://localhost:4000${rec.images[0]}`}
-          alt={rec.name || rec.title}
-          className="w-full h-40 object-cover"
-          onClick={() => navigate("/info", { state: { selectedItem: rec, type: "Place" } })}
+          src={imageSrc}
+          alt={title}
+          className="w-full h-44 object-cover"
         />
-      ) : (
-        <div
-          className="w-full h-40 bg-gray-200 flex items-center justify-center text-gray-500"
-          onClick={() => navigate("/info", { state: { selectedItem: rec, type: "Place" } })}
-        >
-          🏞️ No Image
-        </div>
       )}
 
-      {/* Card Content */}
       <div className="p-4 flex flex-col flex-1">
-        <h3
-          className="text-lg font-semibold text-green-900 mb-1 hover:underline"
-          onClick={() => navigate("/info", { state: { selectedItem: rec, type: "Place" } })}
-        >
-          {rec.name || rec.title}
-        </h3>
+        <h4 className="font-semibold text-lg capitalize text-green-900 line-clamp-1">
+          {title}
+        </h4>
 
-        {rec.location && (
-          <p className="text-sm text-gray-600 mb-2">
-            {rec.location}, {rec.country || ""}
-          </p>
+        {rec.parentPlace && (
+          <p className="text-green-700 text-sm mt-1">({rec.parentPlace})</p>
         )}
 
-        {rec.description && (
-          <p className="text-sm text-gray-700 line-clamp-3 mb-3">{rec.description}</p>
-        )}
-
-        <button
-          onClick={() => navigate("/info", { state: { selectedItem: rec, type: "Place" } })}
-          className="mt-auto px-3 py-1 bg-green-900 text-white rounded hover:bg-green-700 transition text-sm"
-        >
-          View Details
-        </button>
+        <p className="text-gray-600 text-sm mt-2 line-clamp-3 flex-grow">
+          {truncatedDescription}{" "}
+          {description !== "No description available." && (
+            <span
+              onClick={handleReadMore}
+              className="text-green-900 font-semibold cursor-pointer hover:underline"
+            >
+              Read More
+            </span>
+          )}
+        </p>
       </div>
     </div>
   );
 };
 
 export default HomeRecommendationCard;
+
+
+
+
+
+
 

@@ -4,6 +4,8 @@ import { Heart } from "lucide-react";
 const SavePlaceButton = ({ place, onChange }) => {
   const [isSaved, setIsSaved] = useState(false);
 
+
+  console.log(isSaved)
   const token = localStorage.getItem("token");
 
   

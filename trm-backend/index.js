@@ -31,7 +31,7 @@ const port = 4000;
 const apiKey = process.env.OPENWEATHER_API_KEY;
 
 connectToDB();
-app.use(cors({ origin: "http://localhost:5173" }));
+app.use(cors());
 app.use(express.json());
 
 

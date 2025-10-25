@@ -9,6 +9,7 @@ const Info = () => {
   const navigate = useNavigate();
   const { selectedItem, type } = location.state || {};
 
+  console.log(location.state)
   // Scroll to top on mount
   useEffect(() => {
     window.scrollTo(0, 0);

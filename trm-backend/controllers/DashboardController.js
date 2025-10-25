@@ -1,6 +1,6 @@
 import TravelPackage from "../models/travelpackage.js";
 import Booking from "../models/BookingModel/BookModel.js"
-import Agency from "../models/agencyModel.js";
+import Agency from "../models/AgencyModel.js"
 
 export const getDashboardStats = async (req, res) => {
   try {

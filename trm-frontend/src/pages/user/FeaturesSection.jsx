@@ -1,24 +1,25 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
-import { Star } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { Star, StarHalf } from "lucide-react";
 
 const FeaturesSection = () => {
   const [places, setPlaces] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const scrollRef = useRef(null);
 
   useEffect(() => {
     const fetchFeaturedPlaces = async () => {
       try {
         const { data } = await axios.get(
-          "http://localhost:4000/api/featured-places/features-places"
+          "http://localhost:4000/api/featured-places"
         );
-        setPlaces(data);
+        setPlaces(data.places || []);
       } catch (err) {
+        console.error(err);
         setError("Error fetching featured places");
-        console.error("Error fetching featured places:", err);
       } finally {
         setLoading(false);
       }
@@ -28,74 +29,140 @@ const FeaturesSection = () => {
 
   if (loading)
     return (
-      <p className="text-center py-10 text-gray-600">
+      <p className="text-center py-12 text-gray-600">
         Loading featured destinations...
       </p>
     );
   if (error)
-    return (
-      <p className="text-center py-10 text-red-500">{error}</p>
-    );
+    return <p className="text-center py-12 text-red-500">{error}</p>;
   if (!places.length)
     return (
-      <p className="text-center py-10 text-gray-500">
+      <p className="text-center py-12 text-gray-500">
         No featured destinations found.
       </p>
     );
 
-  return (
-    <section className="py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
-        <h2 className="text-2xl font-bold text-green-900 text-center mb-6">
-          Featured Destinations
-        </h2>
-        <div className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {places.map((place) => {
-            const avgRating = place.hotels?.length
-              ? (
-                  place.hotels.reduce((sum, h) => sum + (h.averageRating || 0), 0) /
-                  place.hotels.length
-                ).toFixed(1)
-              : "N/A";
+  // Star Rating Component
+  const StarRating = ({ rating }) => {
+    const roundedRating = Math.round((rating || 0) * 2) / 2;
+    const stars = Array.from({ length: 5 }, (_, i) => {
+      if (i + 1 <= roundedRating) return "full";
+      if (i + 0.5 === roundedRating) return "half";
+      return "empty";
+    });
 
-            const reviewCount =
-              place.hotels?.reduce((sum, h) => sum + (h.totalReviews || 0), 0) ||
-              0;
+    return (
+      <div className="flex items-center mb-1">
+        {stars.map((s, i) => {
+          if (s === "full")
+            return <Star key={i} className="text-yellow-400 w-4 h-4" />;
+          if (s === "half")
+            return <StarHalf key={i} className="text-yellow-400 w-4 h-4" />;
+          return <Star key={i} className="text-gray-300 w-4 h-4" />;
+        })}
+        <span className="text-gray-700 text-sm ml-2">{rating?.toFixed(1)}</span>
+      </div>
+    );
+  };
 
-            return (
-              <div
-                key={place._id}
-                className="bg-white rounded-lg shadow-sm hover:shadow-md overflow-hidden transition cursor-pointer flex flex-col"
-                onClick={() => navigate(`/places/${place._id}`)}
-              >
-                <img
-                  src={place.images?.[0] || "https://via.placeholder.com/400x200?text=No+Image"}
-                  alt={place.name}
-                  className="h-40 w-full object-cover"
-                />
-                <div className="p-3 flex flex-col flex-1">
-                  <h3 className="text-md font-semibold text-green-900 mb-1 truncate">
-                    {place.name}
-                  </h3>
-                  <p className="text-gray-600 text-xs line-clamp-2 mb-2">
-                    {place.description || "No description available"}
-                  </p>
-                  <div className="flex items-center mt-auto">
-                    <Star className="text-yellow-400 w-4 h-4 fill-yellow-400" />
-                    <span className="ml-1 font-medium text-gray-700 text-sm">{avgRating}</span>
-                    <span className="ml-2 text-gray-500 text-xs">({reviewCount} reviews)</span>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+  // Card Component
+  const Card = ({ item, type }) => {
+    const previewText =
+      item.description && item.description.length > 100
+        ? item.description.slice(0, 100) + "..."
+        : item.description || "";
+
+    const imageSrc =
+      item.image?.startsWith("http")
+        ? item.image
+        : item.image
+        ? `http://localhost:4000${item.image}`
+        : item.images?.[0]?.url
+        ? item.images[0].url
+        : item.images?.[0]
+        ? `http://localhost:4000${item.images[0]}`
+        : "/placeholder.png";
+
+    return (
+      <div
+        className="flex flex-col bg-white rounded-xl shadow-md hover:shadow-xl transition w-72 cursor-pointer flex-shrink-0"
+        onClick={() => navigate("/info", { state: { selectedItem: item, type } })}
+      >
+        {imageSrc && (
+          <img
+            src={imageSrc}
+            alt={item.name || item.title}
+            className="w-full h-48 object-cover rounded-t-xl"
+          />
+        )}
+
+        <div className="p-4 flex flex-col flex-1">
+          <h3 className="text-lg font-semibold mb-1">{item.name || item.title}</h3>
+
+          {item.averageRating !== undefined && <StarRating rating={item.averageRating} />}
+
+          <p className="text-gray-700 text-sm leading-relaxed flex-1">{previewText}</p>
         </div>
       </div>
-    </section>
+    );
+  };
+
+  // Determine padding to center 1, 2, or 3 cards
+  const getPadding = (total) => {
+    if (total === 1) return "50%";
+    if (total === 2) return "25%";
+    if (total === 3) return "12.5%";
+    return "0";
+  };
+
+  return (
+    <div className="p-6 max-w-7xl mx-auto">
+      <h2 className="text-3xl font-bold text-green-900 text-center mb-8">
+        Featured Destinations
+      </h2>
+
+      <div
+        ref={scrollRef}
+        className="flex gap-6 overflow-x-scroll scrollbar-hide py-2"
+        style={{
+          paddingLeft: getPadding(places.length),
+          paddingRight: getPadding(places.length),
+        }}
+      >
+        {places.map((place) => (
+          <Card key={place._id} item={place} type="Place" />
+        ))}
+      </div>
+
+      {/* Hotels Section */}
+      {places.map(
+        (place) =>
+          place.hotels?.length > 0 && (
+            <div key={place._id} className="mb-12 mt-8">
+              <h3 className="text-2xl font-bold text-green-900 mb-4">
+                Top Hotels in {place.name}
+              </h3>
+              <div
+                className="flex gap-6 overflow-x-scroll scrollbar-hide py-2"
+                style={{
+                  paddingLeft: getPadding(place.hotels.length),
+                  paddingRight: getPadding(place.hotels.length),
+                }}
+              >
+                {place.hotels.map((hotel) => (
+                  <Card key={hotel._id} item={hotel} type="Hotel" />
+                ))}
+              </div>
+            </div>
+          )
+      )}
+    </div>
   );
 };
 
 export default FeaturesSection;
+
+
 
 
 

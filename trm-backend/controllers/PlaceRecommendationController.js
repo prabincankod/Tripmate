@@ -1,65 +1,92 @@
 import { UserModel } from "../models/userModels.js";
 import Place from "../models/PlaceModel.js";
-
+import { TravelJourney } from "../models/JourneyModel.js";
+// ------------------ GET HOME RECOMMENDATIONS ------------------
 export const getHomeRecommendations = async (req, res) => {
   try {
     const userId = req.user._id;
 
-    // Fetch user and visited places
-    const user = await UserModel.findById(userId).populate("visitedPlaces");
+    // ------------------ Current user's saved places ------------------
+    const userJourney = await TravelJourney.findOne({ userId }).select("savedPlaces").lean();
+    const savedIds = userJourney?.savedPlaces?.map(p => p.placeId.toString()) || [];
+
+    // ------------------ User clicks / travel styles ------------------
+    const user = await UserModel.findById(userId).lean();
     if (!user) return res.status(404).json({ success: false, message: "User not found" });
 
-    // Extract travel styles from travelClicks
-    const clicksMap = user.travelClicks || {};
-    const userStyles = Object.keys(clicksMap); // array of style names
+    let userStyles = Object.keys(user.travelClicks || {});
 
-    // Safely get visited place IDs
-    const visitedPlaceIds = (user.visitedPlaces || []).map(p => p._id);
-
-    // 1️⃣ Style-based recommendations
-    let styleRecommendations = [];
-    if (userStyles.length > 0) {
-      styleRecommendations = await Place.find({
-        _id: { $nin: visitedPlaceIds },
-        travelStyles: { $in: userStyles }
-      }).limit(10);
+    // ------------------ Fallback if no clicks ------------------
+    if (userStyles.length === 0) {
+      userStyles = ["City", "Food", "Temple", "Adventure"];
     }
 
-    // 2️⃣ Recommendations from similar users
-    const similarUsers = await UserModel.find({
-      _id: { $ne: userId },
-      "travelClicks": { $exists: true, $ne: {} } // at least one click
-    }).populate("visitedPlaces");
-
-    let otherUserPlaces = [];
-    similarUsers.forEach(u => {
-      const uVisited = u.visitedPlaces || [];
-      otherUserPlaces.push(
-        ...uVisited.filter(p => !visitedPlaceIds.includes(p._id))
-      );
+    // ------------------ Other users saved places (Collaborative filter) ------------------
+    const otherJourneys = await TravelJourney.find({ userId: { $ne: userId } }).select("savedPlaces").lean();
+    let othersLikedIds = [];
+    otherJourneys.forEach(j => {
+      j.savedPlaces?.forEach(p => {
+        if (!savedIds.includes(p.placeId.toString())) {
+          othersLikedIds.push(p.placeId.toString());
+        }
+      });
     });
+    othersLikedIds = [...new Set(othersLikedIds)]; // deduplicate
 
-    // Deduplicate
-    const uniqueOtherIds = [...new Set(otherUserPlaces.map(p => p._id.toString()))];
+    // ------------------ Fetch all places ------------------
+    const places = await Place.find({}).lean();
 
-    const popularRecommendations = await Place.find({
-      _id: { $in: uniqueOtherIds }
-    }).limit(5);
+    const recommendationsByStyle = {};
 
-    // 3️⃣ Top-rated fallback
-    const topRated = await Place.find({
-      _id: { $nin: visitedPlaceIds }
-    }).sort({ averageRating: -1 }).limit(3);
+    // ------------------ Score places per user style ------------------
+    for (const style of userStyles) {
+      const regex = new RegExp(`^${style}$`, "i");
 
-    // 4️⃣ Combine + Deduplicate + Shuffle
-    const combined = [...styleRecommendations, ...popularRecommendations, ...topRated];
-    const uniqueCombined = [...new Map(combined.map(p => [p._id.toString(), p])).values()];
-    const shuffled = uniqueCombined.sort(() => 0.5 - Math.random());
+      const scoredPlaces = places
+        .map(place => {
+          let score = 0;
+          const isCity = place.travelStyles?.some(s => regex.test(s));
 
-    res.json({ success: true, recommendations: shuffled });
+          // ------------------ Personal clicks / style match ------------------
+          if (place.travelStyles?.some(s => regex.test(s))) score += 3;
+          if (place.thingsToDo?.some(t => regex.test(t.travelStyle))) score += 2;
+          if (place.topAttractions?.some(a => regex.test(a.type))) score += 2;
+          if (place.localCulture?.some(c => regex.test(c.travelStyle))) score += 1;
+          if (place.localCuisine?.some(c => regex.test(c.travelStyle))) score += 1;
+
+          // ------------------ City place boosts ------------------
+          if (isCity) {
+            if (savedIds.includes(place._id.toString())) score += 3;        // user saved boost
+            if (othersLikedIds.includes(place._id.toString())) score += 2;  // collaborative filter
+            score += place.averageRating || 0;                              // rating boost
+          }
+
+          return { place, score };
+        })
+        .filter(p => p.score > 0); // only keep relevant
+
+      // Sort by score descending, tie-breaker City first
+      scoredPlaces.sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score;
+        const aIsCity = a.place.travelStyles?.includes("City") ? 1 : 0;
+        const bIsCity = b.place.travelStyles?.includes("City") ? 1 : 0;
+        return bIsCity - aIsCity;
+      });
+
+      // Top 4 per style
+      const topPlaces = scoredPlaces.map(p => p.place).slice(0, 4);
+
+      recommendationsByStyle[style] = topPlaces;
+    }
+
+    res.json({ success: true, recommendations: recommendationsByStyle });
 
   } catch (err) {
-    console.error("Error fetching recommendations:", err);
-    res.status(500).json({ success: false, message: "Error fetching recommendations" });
+    console.error("Error fetching home recommendations:", err);
+    res.status(500).json({ 
+      success: false, 
+      message: "Error fetching recommendations", 
+      error: err.message
+    });
   }
 };

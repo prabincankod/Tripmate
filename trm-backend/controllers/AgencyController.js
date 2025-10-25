@@ -1,10 +1,10 @@
 import { UserModel } from "../models/userModels.js";
 import AgencyApplication from "../models/AgencyApplicationModel.js";
 import Notification from "../models/NotificcationModel.js";
-import agencyModel from "../models/agencyModel.js";
+import agencyModel from "../models/AgencyModel.js";
 import TravelPackage from "../models/travelpackage.js";
 import Booking from "../models/BookingModel/BookModel.js";
-import mongoose from "mongoose";
+
 export const createAgency = async (req, res) => {
   try {
     const { agencyName, agencyEmail, licenseNumber } = req.body;

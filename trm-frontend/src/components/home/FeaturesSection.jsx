@@ -41,17 +41,13 @@ const FeaturesSection = () => {
       </p>
     );
 
-  // Card Component
-  const Card = ({ image, title, description, id, type, rating, reviews }) => {
-    const previewText =
-      description && description.length > 100
-        ? description.slice(0, 100) + "..."
-        : description;
+  const Card = ({ image, title, description, data, type, rating, reviews }) => {
+    const shortDesc =
+      description && description.length > 80
+        ? description.slice(0, 80) + "..."
+        : description || "";
 
-    // Round rating to nearest 0.5 for half stars
-    const roundedRating = Math.round((rating || 0) * 2) / 2;
-
-    // Create array for 5 stars
+    const roundedRating = Math.round((rating ?? 0) * 2) / 2;
     const stars = Array.from({ length: 5 }, (_, i) => {
       if (i + 1 <= roundedRating) return "full";
       if (i + 0.5 === roundedRating) return "half";
@@ -60,46 +56,51 @@ const FeaturesSection = () => {
 
     return (
       <div
-        className="flex flex-col bg-white rounded-xl shadow-md hover:shadow-xl transition w-full max-w-xs cursor-pointer"
+        className="flex flex-col bg-white rounded-xl shadow-md hover:shadow-xl transition cursor-pointer w-full max-w-[300px]"
         onClick={() => {
-          if (type === "Place") navigate(`/places/${id}`);
+          if (type === "Place") navigate(`/places/${data._id}`);
           else if (type === "Hotel")
-            navigate("/info", { state: { selectedItem: { id, type } } });
+            navigate("/info", { state: { selectedItem: data, type } });
         }}
       >
         {image && (
           <img
             src={`http://localhost:4000${image}`}
             alt={title}
-            className="w-full h-48 object-cover rounded-t-xl"
+            className="w-full h-40 object-cover rounded-t-xl"
           />
         )}
-        <div className="p-4 flex flex-col flex-1">
-          <h3 className="text-lg font-semibold mb-1">{title}</h3>
+        <div className="p-3 flex flex-col flex-1">
+          <h3 className="text-md font-semibold mb-1">{title}</h3>
 
           {/* Star Rating */}
-          {rating !== undefined && (
-            <div className="flex items-center mb-2">
-              {stars.map((s, i) => {
-                if (s === "full")
-                  return <Star key={i} className="text-yellow-400 w-4 h-4" />;
-                if (s === "half")
-                  return <StarHalf key={i} className="text-yellow-400 w-4 h-4" />;
-                return <StarEmpty key={i} className="text-gray-300 w-4 h-4" />;
-              })}
-              <span className="text-gray-700 text-sm ml-2">{rating?.toFixed(1)}</span>
-              {reviews && (
-                <span className="text-gray-600 text-sm ml-2">
-                  ({reviews} reviews)
-                </span>
-              )}
-            </div>
-          )}
+          <div className="flex items-center mb-1">
+            {stars.map((s, i) => {
+              if (s === "full")
+                return <Star key={i} className="text-yellow-400 w-3.5 h-3.5" />;
+              if (s === "half")
+                return <StarHalf key={i} className="text-yellow-400 w-3.5 h-3.5" />;
+              return <StarEmpty key={i} className="text-gray-300 w-3.5 h-3.5" />;
+            })}
+            <span className="text-gray-700 text-xs ml-1">{(rating ?? 0).toFixed(1)}</span>
+            {reviews !== undefined && (
+              <span className="text-gray-500 text-xs ml-1">({reviews})</span>
+            )}
+          </div>
 
-          <p className="text-gray-700 text-sm leading-relaxed flex-1">
-            {previewText}{" "}
-            {description && description.length > 100 && (
-              <span className="text-gray-500 hover:text-gray-700 cursor-pointer">
+          {/* Description */}
+          <p className="text-gray-700 text-sm leading-snug">
+            {shortDesc}{" "}
+            {description && description.length > 80 && (
+              <span
+                className="text-gray-500 hover:text-gray-700 cursor-pointer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (type === "Place") navigate(`/places/${data._id}`);
+                  else if (type === "Hotel")
+                    navigate("/info", { state: { selectedItem: data, type } });
+                }}
+              >
                 Read More
               </span>
             )}
@@ -111,45 +112,45 @@ const FeaturesSection = () => {
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
-      <h2 className="text-3xl font-bold text-green-900 text-center mb-8">
+      <h2 className="text-2xl sm:text-3xl font-bold text-green-900 text-center mb-6">
         Featured Destinations
       </h2>
 
       {/* Place Cards */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 mb-8">
         {places.map((place) => (
           <Card
             key={place._id}
             image={place.images?.[0]}
             title={place.name}
-            description={place.description || ""}
-            id={place._id}
+            description={place.description}
+            data={place}
             type="Place"
-            rating={place.rating}
-            reviews={place.reviews}
+            rating={place.averageRating}
+            reviews={place.reviewCount}
           />
         ))}
       </div>
 
       {/* Hotels Section */}
       {places.map((place) => (
-        <div key={place._id} className="mb-12">
+        <div key={place._id} className="mb-8">
           {place.hotels?.length > 0 && (
             <>
-              <h3 className="text-2xl font-bold text-green-900 mb-4">
+              <h3 className="text-xl font-bold text-green-900 mb-3">
                 Top Hotels in {place.name}
               </h3>
-              <div className="flex flex-wrap gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
                 {place.hotels.map((hotel) => (
                   <Card
                     key={hotel._id}
                     image={hotel.image}
                     title={hotel.name}
                     description={hotel.description || ""}
-                    id={hotel._id}
+                    data={hotel}
                     type="Hotel"
-                    rating={hotel.rating}
-                    reviews={hotel.reviews}
+                    rating={hotel.averageRating ?? 0}
+                    reviews={hotel.reviewCount ?? 0}
                   />
                 ))}
               </div>
@@ -162,4 +163,12 @@ const FeaturesSection = () => {
 };
 
 export default FeaturesSection;
+
+
+
+
+
+
+
+
 
