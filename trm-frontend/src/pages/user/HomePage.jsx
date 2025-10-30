@@ -9,6 +9,7 @@ import NavBarLoggedIn from "../../components/common/Navbar1";
 import RecommendationsSection from "../../pages/explorepage/recommendation/RecommendationSection";
 import HomeRecommendationsSection from "./HomeRecommendation.jsx";
 import TravelBlogsSection from "./TravelBlog";
+import HotelRecommendation from "./HotelRecommendation.jsx"
 import api from "../../utils/apiUtiles";
 
 const Homepage = () => {
@@ -111,6 +112,11 @@ const Homepage = () => {
             <FeaturesSection />
           </div>
 
+          {/* Hotels Near User Location */}
+          <div className="mb-8">
+            <HotelRecommendation />
+          </div>
+
           {/* Travel Interest Selection */}
           <div className="mb-8">
             <TravelInterest onSelect={handleSelectTravelStyle} />
@@ -145,6 +151,7 @@ const Homepage = () => {
 };
 
 export default Homepage;
+
 
 
 

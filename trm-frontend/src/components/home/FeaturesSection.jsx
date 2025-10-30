@@ -5,25 +5,25 @@ import { Star, StarHalf, Star as StarEmpty } from "lucide-react";
 
 const FeaturesSection = () => {
   const [places, setPlaces] = useState([]);
+  const [topHotels, setTopHotels] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchFeaturedPlaces = async () => {
+    const fetchData = async () => {
       try {
-        const { data } = await axios.get(
-          "http://localhost:4000/api/featured-places"
-        );
+        const { data } = await axios.get("http://localhost:4000/api/featured-places");
         setPlaces(data.places || []);
+        setTopHotels(data.topHotels || []);
       } catch (err) {
         console.error(err);
-        setError("Error fetching featured places");
+        setError("Error fetching featured destinations");
       } finally {
         setLoading(false);
       }
     };
-    fetchFeaturedPlaces();
+    fetchData();
   }, []);
 
   if (loading)
@@ -34,7 +34,7 @@ const FeaturesSection = () => {
     );
   if (error)
     return <p className="text-center py-12 text-red-500">{error}</p>;
-  if (!places.length)
+  if (!places.length && !topHotels.length)
     return (
       <p className="text-center py-12 text-gray-500">
         No featured destinations found.
@@ -73,7 +73,6 @@ const FeaturesSection = () => {
         <div className="p-3 flex flex-col flex-1">
           <h3 className="text-md font-semibold mb-1">{title}</h3>
 
-          {/* Star Rating */}
           <div className="flex items-center mb-1">
             {stars.map((s, i) => {
               if (s === "full")
@@ -88,12 +87,11 @@ const FeaturesSection = () => {
             )}
           </div>
 
-          {/* Description */}
           <p className="text-gray-700 text-sm leading-snug">
             {shortDesc}{" "}
             {description && description.length > 80 && (
               <span
-                className="text-gray-500 hover:text-gray-700 cursor-pointer"
+                className="text-blue-700 hover:text-gray-700 cursor-pointer"
                 onClick={(e) => {
                   e.stopPropagation();
                   if (type === "Place") navigate(`/places/${data._id}`);
@@ -132,32 +130,28 @@ const FeaturesSection = () => {
         ))}
       </div>
 
-      {/* Hotels Section */}
-      {places.map((place) => (
-        <div key={place._id} className="mb-8">
-          {place.hotels?.length > 0 && (
-            <>
-              <h3 className="text-xl font-bold text-green-900 mb-3">
-                Top Hotels in {place.name}
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
-                {place.hotels.map((hotel) => (
-                  <Card
-                    key={hotel._id}
-                    image={hotel.image}
-                    title={hotel.name}
-                    description={hotel.description || ""}
-                    data={hotel}
-                    type="Hotel"
-                    rating={hotel.averageRating ?? 0}
-                    reviews={hotel.reviewCount ?? 0}
-                  />
-                ))}
-              </div>
-            </>
-          )}
+      {/* Top Hotels Section */}
+      {topHotels.length > 0 && (
+        <div className="mb-8">
+          <h3 className="text-xl font-bold text-green-900 mb-3 text-center">
+            Top Hotels in Nepal
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+            {topHotels.map((hotel) => (
+              <Card
+                key={hotel._id}
+                image={hotel.image}
+                title={hotel.name}
+                description={hotel.description || ""}
+                data={hotel}
+                type="Hotel"
+                rating={hotel.averageRating ?? 0}
+                reviews={hotel.reviewCount ?? 0}
+              />
+            ))}
+          </div>
         </div>
-      ))}
+      )}
     </div>
   );
 };

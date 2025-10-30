@@ -1,15 +1,47 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
-import Sidebar from "../tool/SideBar"; // adjust path
+import Sidebar from "../tool/SideBar";
 import PackageForm from "./PackageForm";
+import { MoreVertical, Trash2, Edit3 } from "lucide-react";
+import { toast } from "react-hot-toast";
+
+// Dropdown component
+const Dropdown = ({ children }) => {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen(!open)}
+        className="p-1 rounded hover:bg-gray-100"
+      >
+        <MoreVertical size={18} />
+      </button>
+      {open && (
+        <div className="absolute right-0 mt-2 w-36 bg-white border rounded shadow-lg z-50 flex flex-col">
+          {children}
+        </div>
+      )}
+    </div>
+  );
+};
 
 const ManagePackage = () => {
   const [packages, setPackages] = useState([]);
-  const [selectedPackage, setSelectedPackage] = useState(null);
+  const [expandedRow, setExpandedRow] = useState(null);
   const [editingPackage, setEditingPackage] = useState(null);
   const [showForm, setShowForm] = useState(false);
+  const formRef = useRef(null);
 
-  // Fetch all packages
   const fetchPackages = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -19,8 +51,13 @@ const ManagePackage = () => {
       if (res.data.success) setPackages(res.data.data);
     } catch (err) {
       console.error(err);
+      toast.error("Failed to fetch packages");
     }
   };
+
+  useEffect(() => {
+    fetchPackages();
+  }, []);
 
   const handleDelete = async (id) => {
     try {
@@ -29,9 +66,11 @@ const ManagePackage = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       setPackages(packages.filter((p) => p._id !== id));
-      if (selectedPackage?._id === id) setSelectedPackage(null);
+      toast.success("Package deleted successfully");
+      if (expandedRow === id) setExpandedRow(null);
     } catch (err) {
       console.error(err);
+      toast.error("Failed to delete package");
     }
   };
 
@@ -40,18 +79,14 @@ const ManagePackage = () => {
     setShowForm(true);
   };
 
-  const handleRowClick = (pkg) => {
-    setSelectedPackage(pkg);
+  const handleRowClick = (id) => {
+    setExpandedRow(expandedRow === id ? null : id);
   };
 
   const handleCreateClick = () => {
     setEditingPackage(null);
     setShowForm(true);
   };
-
-  useEffect(() => {
-    fetchPackages();
-  }, []);
 
   return (
     <div className="flex min-h-screen bg-gray-100">
@@ -62,7 +97,7 @@ const ManagePackage = () => {
 
       {/* Main Content */}
       <div className="flex-1 p-6 space-y-6 overflow-auto">
-        {/* Header with Create Button */}
+        {/* Header */}
         <div className="flex justify-between items-center bg-white shadow rounded-lg p-4 mb-4 sticky top-0 z-10">
           <h2 className="text-xl font-semibold text-gray-800">Travel Packages</h2>
           <button
@@ -75,7 +110,7 @@ const ManagePackage = () => {
 
         {/* Package Form */}
         {showForm && (
-          <div className="relative mb-4">
+          <div ref={formRef} className="relative mb-4">
             <button
               onClick={() => setShowForm(false)}
               className="absolute top-0 right-0 mt-2 mr-2 text-gray-500 hover:text-gray-800 text-xl font-bold z-20"
@@ -86,6 +121,7 @@ const ManagePackage = () => {
               editingPackage={editingPackage}
               onSuccess={() => {
                 fetchPackages();
+                toast.success("Package saved successfully");
                 setShowForm(false);
               }}
               onCancel={() => setShowForm(false)}
@@ -103,43 +139,92 @@ const ManagePackage = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {packages.length > 0 ? (
-                packages.map((pkg, idx) => (
-                  <tr
-                    key={pkg._id}
-                    className={`cursor-pointer ${idx % 2 === 0 ? "bg-gray-50" : ""}`}
-                    onClick={() => handleRowClick(pkg)}
-                  >
-                    <td className="px-6 py-4">{pkg.name}</td>
-                    <td className="px-6 py-4">{pkg.location}</td>
-                    <td className="px-6 py-4">Rs. {pkg.price}</td>
-                    <td className="px-6 py-4">{pkg.duration}</td>
-                    <td className="px-6 py-4">{pkg.category}</td>
-                    <td className="px-6 py-4 flex gap-2">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEdit(pkg);
-                        }}
-                        className="bg-blue-500 text-white px-2 py-1 rounded text-xs hover:bg-blue-600"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDelete(pkg._id);
-                        }}
-                        className="bg-red-500 text-white px-2 py-1 rounded text-xs hover:bg-red-600"
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
+                packages.map((pkg) => (
+                  <React.Fragment key={pkg._id}>
+                    <tr
+                      className="cursor-pointer hover:bg-gray-50 transition"
+                      onClick={() => handleRowClick(pkg._id)}
+                    >
+                      <td className="px-6 py-4">{pkg.name}</td>
+                      <td className="px-6 py-4">{pkg.location}</td>
+                      <td className="px-6 py-4">Rs. {pkg.price}</td>
+                      <td className="px-6 py-4">{pkg.duration}</td>
+                      <td className="px-6 py-4">{pkg.category}</td>
+                      <td className="px-6 py-4 flex justify-center">
+                        <Dropdown>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEdit(pkg);
+                            }}
+                            className="px-2 py-1 text-sm text-blue-600 hover:bg-gray-100 rounded w-full text-left flex items-center gap-1"
+                          >
+                            <Edit3 size={14} /> Edit
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDelete(pkg._id);
+                            }}
+                            className="px-2 py-1 text-sm text-red-600 hover:bg-gray-100 rounded w-full text-left flex items-center gap-1"
+                          >
+                            <Trash2 size={14} /> Delete
+                          </button>
+                        </Dropdown>
+                      </td>
+                    </tr>
+
+                    {/* Expanded Row */}
+                    {expandedRow === pkg._id && (
+                      <tr className="bg-gray-50">
+                        <td colSpan={6} className="px-6 py-4">
+                          <div className="space-y-3">
+                            <p><strong>Overview:</strong> {pkg.overview}</p>
+                            {pkg.imageUrl && (
+                              <img
+                                src={pkg.imageUrl}
+                                alt={pkg.name}
+                                className="w-64 h-40 object-cover rounded"
+                              />
+                            )}
+                            <div className="grid grid-cols-2 gap-4">
+                              <p><strong>Transport on Arrival:</strong> {pkg.transportAvailableOnArrival ? "Yes" : "No"}</p>
+                              <p><strong>Agency:</strong> {pkg.agency?.name}</p>
+                              <p><strong>Agency Location:</strong> {pkg.agency?.location}</p>
+                            </div>
+                            {pkg.highlights?.length > 0 && (
+                              <p><strong>Highlights:</strong> {pkg.highlights.join(", ")}</p>
+                            )}
+                            {pkg.policy && (
+                              <div>
+                                <p><strong>Included:</strong> {pkg.policy.included?.join(", ")}</p>
+                                <p><strong>Excluded:</strong> {pkg.policy.excluded?.join(", ")}</p>
+                                <p><strong>Cancellation:</strong> {pkg.policy.cancellation}</p>
+                                <p><strong>Payment:</strong> {pkg.policy.payment}</p>
+                              </div>
+                            )}
+                            {pkg.itinerary?.length > 0 && (
+                              <div>
+                                <p><strong>Itinerary:</strong></p>
+                                <ul className="list-disc ml-5">
+                                  {pkg.itinerary.map((day) => (
+                                    <li key={day.day}>
+                                      Day {day.day}: {day.title} | Activities: {day.activities?.join(", ")} | Meals: {day.meals?.join(", ")} | Accommodation: {day.accommodation}
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
                 ))
               ) : (
                 <tr>
@@ -151,99 +236,12 @@ const ManagePackage = () => {
             </tbody>
           </table>
         </div>
-
-        {/* Selected Package Details */}
-        {selectedPackage && (
-          <div className="relative mt-6 p-4 bg-white shadow rounded-lg">
-            <button
-              onClick={() => setSelectedPackage(null)}
-              className="absolute top-0 right-0 mt-2 mr-2 text-gray-500 hover:text-gray-800 text-xl font-bold"
-            >
-              ×
-            </button>
-
-            <h3 className="text-xl font-semibold mb-2">{selectedPackage.name}</h3>
-            <p className="mb-2">{selectedPackage.overview}</p>
-
-            <div className="grid grid-cols-2 gap-4">
-              <p><strong>Location:</strong> {selectedPackage.location}</p>
-              <p><strong>Category:</strong> {selectedPackage.category}</p>
-              <p><strong>Price:</strong> Rs. {selectedPackage.price}</p>
-              <p><strong>Duration:</strong> {selectedPackage.duration}</p>
-              <p><strong>Transport on Arrival:</strong> {selectedPackage.transportAvailableOnArrival ? "Yes" : "No"}</p>
-            </div>
-
-            {/* Highlights */}
-            {selectedPackage.highlights?.length > 0 && (
-              <div className="mt-4">
-                <h4 className="font-semibold">Highlights:</h4>
-                <ul className="list-disc ml-5">
-                  {selectedPackage.highlights.map((h, idx) => (
-                    <li key={idx}>{h}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* Policy */}
-            {selectedPackage.policy && (
-              <div className="mt-4">
-                <h4 className="font-semibold">Policy:</h4>
-                {selectedPackage.policy.included?.length > 0 && (
-                  <p><strong>Included:</strong> {selectedPackage.policy.included.join(", ")}</p>
-                )}
-                {selectedPackage.policy.excluded?.length > 0 && (
-                  <p><strong>Excluded:</strong> {selectedPackage.policy.excluded.join(", ")}</p>
-                )}
-                {selectedPackage.policy.cancellation && (
-                  <p><strong>Cancellation:</strong> {selectedPackage.policy.cancellation}</p>
-                )}
-                {selectedPackage.policy.payment && (
-                  <p><strong>Payment:</strong> {selectedPackage.policy.payment}</p>
-                )}
-              </div>
-            )}
-
-            {/* Itinerary */}
-            {selectedPackage.itinerary?.length > 0 && (
-              <div className="mt-4">
-                <h4 className="font-semibold">Itinerary:</h4>
-                <ul className="list-disc ml-5 space-y-2">
-                  {selectedPackage.itinerary.map((day) => (
-                    <li key={day.day}>
-                      <p><strong>Day {day.day}:</strong> {day.title}</p>
-                      {day.activities?.length > 0 && <p>Activities: {day.activities.join(", ")}</p>}
-                      {day.meals?.length > 0 && <p>Meals: {day.meals.join(", ")}</p>}
-                      {day.accommodation && <p>Accommodation: {day.accommodation}</p>}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* Agency */}
-            {selectedPackage.agency && (
-              <div className="mt-4">
-                <h4 className="font-semibold">Agency Overview:</h4>
-                <p><strong>Name:</strong> {selectedPackage.agency.name}</p>
-                <p><strong>Location:</strong> {selectedPackage.agency.location}</p>
-              </div>
-            )}
-          </div>
-        )}
       </div>
     </div>
   );
 };
 
 export default ManagePackage;
-
-
-
-
-
-
-
 
 
 

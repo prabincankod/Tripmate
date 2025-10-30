@@ -35,5 +35,6 @@ const hotelSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+hotelSchema.index({ location: "2dsphere" });
 
 export default mongoose.model("Hotel", hotelSchema);

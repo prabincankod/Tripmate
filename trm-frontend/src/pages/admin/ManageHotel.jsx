@@ -1,4 +1,3 @@
-// src/pages/admin/ManageHotels.jsx
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import Loader from "../../components/common/Loader";
@@ -12,6 +11,9 @@ const ManageHotels = () => {
   const [formVisible, setFormVisible] = useState(false);
   const [editHotel, setEditHotel] = useState(null);
   const [message, setMessage] = useState(null);
+  const [search, setSearch] = useState("");
+  const [filterPlace, setFilterPlace] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState(null); // for popup confirmation
 
   const [formData, setFormData] = useState({
     placeId: "",
@@ -26,9 +28,6 @@ const ManageHotels = () => {
     location: { coordinates: [0, 0] },
   });
 
-  const [search, setSearch] = useState("");
-  const [filterPlace, setFilterPlace] = useState("");
-
   const API_URL = "http://localhost:4000/api/hotels";
   const PLACE_API_URL = "http://localhost:4000/api/places";
 
@@ -42,7 +41,6 @@ const ManageHotels = () => {
       setHotels(res.data);
       setFilteredHotels(res.data);
     } catch (err) {
-      console.error(err);
       setMessage({ type: "error", text: "Failed to fetch hotels" });
     } finally {
       setLoading(false);
@@ -99,6 +97,14 @@ const ManageHotels = () => {
     setEditHotel(null);
   };
 
+  // ------------------ AUTO HIDE MESSAGE ------------------
+  useEffect(() => {
+    if (message) {
+      const timer = setTimeout(() => setMessage(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [message]);
+
   // ------------------ SUBMIT FORM ------------------
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -138,11 +144,27 @@ const ManageHotels = () => {
       resetForm();
       fetchHotels();
     } catch (err) {
-      console.error(err);
       setMessage({
         type: "error",
         text: err.response?.data?.message || err.message,
       });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ------------------ DELETE HOTEL ------------------
+  const handleDelete = async (id) => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("token");
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+      await axios.delete(`${API_URL}/${id}`, config);
+      setMessage({ type: "success", text: "Hotel deleted successfully!" });
+      setConfirmDelete(null);
+      fetchHotels();
+    } catch (err) {
+      setMessage({ type: "error", text: "Failed to delete hotel" });
     } finally {
       setLoading(false);
     }
@@ -166,34 +188,16 @@ const ManageHotels = () => {
     setFormVisible(true);
   };
 
-  // ------------------ DELETE HOTEL ------------------
-  const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this hotel?")) return;
-    try {
-      setLoading(true);
-      const token = localStorage.getItem("token");
-      const config = { headers: { Authorization: `Bearer ${token}` } };
-      await axios.delete(`${API_URL}/${id}`, config);
-      setMessage({ type: "success", text: "Hotel deleted successfully!" });
-      fetchHotels();
-    } catch (err) {
-      console.error(err);
-      setMessage({ type: "error", text: "Failed to delete hotel" });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
-      <h2 className="text-3xl font-semibold mb-6 align-middle text-gray-800">
+      <h2 className="text-3xl font-semibold mb-6 text-gray-800">
         Manage Hotels
       </h2>
 
       {/* Message */}
       {message && (
         <p
-          className={`mb-4 p-3 rounded-md text-sm font-medium ${
+          className={`mb-4 p-3 rounded-md text-sm font-medium transition-all duration-500 ${
             message.type === "success"
               ? "bg-emerald-100 text-emerald-700"
               : "bg-rose-100 text-rose-700"
@@ -254,42 +258,44 @@ const ManageHotels = () => {
           <Loader />
         </div>
       ) : (
-        <div className="overflow-x-auto bg-white rounded-lg shadow-sm border border-gray-100">
-          <table className="min-w-full border-collapse">
-            <thead className="bg-gray-100 text-gray-700">
+        <div className="overflow-x-auto bg-white rounded-lg shadow-md border border-gray-100">
+          <table className="min-w-full text-sm text-gray-700">
+            <thead className="bg-gray-100 border-b">
               <tr>
-                <th className="p-3 border">Name</th>
-                <th className="p-3 border">Place</th>
-                <th className="p-3 border">Address</th>
-                <th className="p-3 border">Contact</th>
-                <th className="p-3 border">Price</th>
-                <th className="p-3 border">Actions</th>
+                <th className="px-4 py-3 text-left font-medium">Name</th>
+                <th className="px-4 py-3 text-left font-medium">Place</th>
+                <th className="px-4 py-3 text-left font-medium">Address</th>
+                <th className="px-4 py-3 text-left font-medium">Contact</th>
+                <th className="px-4 py-3 text-left font-medium">Price</th>
+                <th className="px-4 py-3 text-left font-medium">Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredHotels.map((hotel) => (
                 <tr
                   key={hotel._id}
-                  className="hover:bg-gray-50 transition-all text-gray-800"
+                  className="border-b hover:bg-gray-50 group transition-all"
                 >
-                  <td className="p-3 border font-medium">{hotel.name}</td>
-                  <td className="p-3 border">{hotel.placeId?.name || "-"}</td>
-                  <td className="p-3 border">{hotel.address}</td>
-                  <td className="p-3 border">{hotel.contact}</td>
-                  <td className="p-3 border">{hotel.priceRange}</td>
-                  <td className="p-3 border flex gap-2">
-                    <button
-                      onClick={() => handleEdit(hotel)}
-                      className="px-3 py-1 bg-yellow-400 text-white rounded hover:bg-yellow-500"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(hotel._id)}
-                      className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
-                    >
-                      Delete
-                    </button>
+                  <td className="px-4 py-3">{hotel.name}</td>
+                  <td className="px-4 py-3">{hotel.placeId?.name || "-"}</td>
+                  <td className="px-4 py-3">{hotel.address}</td>
+                  <td className="px-4 py-3">{hotel.contact}</td>
+                  <td className="px-4 py-3">{hotel.priceRange}</td>
+                  <td className="px-4 py-3">
+                    <div className="opacity-0 group-hover:opacity-100 flex gap-2 transition-all">
+                      <button
+                        onClick={() => handleEdit(hotel)}
+                        className="px-3 py-1 bg-yellow-400 text-white rounded hover:bg-yellow-500"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => setConfirmDelete(hotel._id)}
+                        className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -304,9 +310,35 @@ const ManageHotels = () => {
           </table>
         </div>
       )}
+
+      {/* Popup Delete Confirmation */}
+      {confirmDelete && (
+        <div className="fixed inset-0 flex justify-center items-center bg-black/50 z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-[90%] max-w-sm text-center">
+            <h3 className="text-lg font-semibold text-gray-800 mb-3">
+              Are you sure you want to delete this hotel?
+            </h3>
+            <div className="flex justify-center gap-3">
+              <button
+                onClick={() => handleDelete(confirmDelete)}
+                className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+              >
+                Yes, Delete
+              </button>
+              <button
+                onClick={() => setConfirmDelete(null)}
+                className="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
 export default ManageHotels;
+
 

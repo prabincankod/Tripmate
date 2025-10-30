@@ -15,6 +15,8 @@ export const createHotel = async (req, res) => {
       priceRange,
       amenities,
       roomFeatures,
+      lat,
+      long,
     } = req.body;
 
     if (!placeId || !name)
@@ -35,6 +37,13 @@ export const createHotel = async (req, res) => {
       priceRange,
       amenities: amenities ? JSON.parse(amenities) : [],
       roomFeatures: roomFeatures ? JSON.parse(roomFeatures) : [],
+      location: {
+    type: "Point",
+    coordinates:
+      lat && long
+        ? [parseFloat(long), parseFloat(lat)]
+        : place.location?.coordinates || [0, 0],
+  },
     });
 
     await hotel.save();
@@ -161,5 +170,44 @@ export const getAllHotels = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+// controllers/hotelController.js
+export const recommendHotels = async (req, res) => {
+  try {
+    const { lat, lon, radius = 10000 } = req.body;
 
+    if (lat == null || lon == null)
+      return res.status(400).json({ message: "Latitude and longitude are required" });
 
+    // $near query without extra conditions on the same field
+    const nearbyHotels = await Hotel.find({
+      location: {
+        $near: {
+          $geometry: { type: "Point", coordinates: [parseFloat(lon), parseFloat(lat)] },
+          $maxDistance: parseInt(radius),
+        },
+      },
+    }).lean();
+
+    // Filter out hotels that still have invalid coordinates
+    const validHotels = nearbyHotels.filter(
+      (hotel) => hotel.location?.coordinates?.[0] !== 0 || hotel.location?.coordinates?.[1] !== 0
+    );
+
+    if (!validHotels.length) {
+      return res.status(404).json({ message: "No nearby hotels found" });
+    }
+
+    const hotelsWithPhoto = validHotels.map((hotel) => ({
+      ...hotel,
+      photo: hotel.image || "https://via.placeholder.com/300",
+    }));
+
+    res.status(200).json({ hotels: hotelsWithPhoto });
+  } catch (err) {
+    console.error("RecommendHotels Error:", err.message);
+    res.status(500).json({
+      message: "Error recommending hotels",
+      error: err.message,
+    });
+  }
+};

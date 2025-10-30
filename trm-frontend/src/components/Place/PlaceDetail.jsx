@@ -1,9 +1,11 @@
 // src/components/places/PlaceDetail.jsx
+// src/components/places/PlaceDetail.jsx
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import SavePlaceButton from "../TravelJourney/Card/Saveplace";
-import { Star, MapPin, Cloud, ChevronLeft, ChevronRight } from "lucide-react";
+import { Star, MapPin, ChevronLeft, ChevronRight } from "lucide-react";
 import Loader from "../common/Loader";
+import WeatherCard from "./Weathercard" // Weather card import
 import MapView from "./Mapview";
 import ReviewSection from "./ReviewSection";
 
@@ -17,7 +19,6 @@ const PlaceDetail = () => {
   const [loading, setLoading] = useState(true);
   const [currentImage, setCurrentImage] = useState(0);
   const [isSaved, setIsSaved] = useState(false);
-  const [weatherInfo, setWeatherInfo] = useState(null);
 
   // Fetch place data
   useEffect(() => {
@@ -34,28 +35,6 @@ const PlaceDetail = () => {
     };
     fetchPlace();
   }, [id]);
-
-  // Fetch weather
-  useEffect(() => {
-    if (!place?.location?.coordinates) return;
-
-    const fetchWeather = async () => {
-      const [lng, lat] = place.location.coordinates;
-      try {
-        const res = await fetch(
-          `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lng}&units=metric&appid=${process.env.REACT_APP_OPENWEATHER_KEY}`
-        );
-        const data = await res.json();
-        setWeatherInfo({
-          temperature: data.main.temp,
-          condition: data.weather[0].description,
-        });
-      } catch (err) {
-        console.error("Weather fetch error:", err);
-      }
-    };
-    fetchWeather();
-  }, [place]);
 
   // Check if place is saved
   useEffect(() => {
@@ -182,10 +161,12 @@ const PlaceDetail = () => {
 
         <div className="absolute bottom-8 left-8 text-white z-10">
           <h1 className="text-4xl font-bold">{place.name}</h1>
-          {weatherInfo && (
-            <div className="flex items-center gap-1 mt-2">
-              <Cloud /> {weatherInfo.temperature}°C, {weatherInfo.condition}
-            </div>
+          {/* WeatherCard */}
+          {place.location?.coordinates?.length === 2 && (
+            <WeatherCard
+              lat={place.location.coordinates[1]}
+              lon={place.location.coordinates[0]}
+            />
           )}
           <div className="flex items-center gap-2 mt-1">
             <MapPin />
@@ -368,5 +349,3 @@ const PlaceDetail = () => {
 };
 
 export default PlaceDetail;
-
-

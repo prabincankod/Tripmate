@@ -6,11 +6,15 @@ import { Bell } from "lucide-react";
 const NavBarLoggedIn = () => {
   const navigate = useNavigate();
   const location = useLocation();
+
   const [query, setQuery] = useState("");
   const [notifications, setNotifications] = useState([]);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
+
   const dropdownRef = useRef(null);
 
+  // Fetch notifications
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
@@ -24,6 +28,17 @@ const NavBarLoggedIn = () => {
       }
     };
     fetchNotifications();
+  }, []);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const handleSearchChange = (e) => setQuery(e.target.value);
@@ -40,16 +55,6 @@ const NavBarLoggedIn = () => {
   };
 
   const toggleDropdown = () => setDropdownOpen(!dropdownOpen);
-
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
-        setDropdownOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
@@ -108,6 +113,7 @@ const NavBarLoggedIn = () => {
 
           {/* Notifications & Logout */}
           <div className="flex items-center space-x-6">
+            {/* Notifications */}
             <div className="relative" ref={dropdownRef}>
               <button
                 onClick={toggleDropdown}
@@ -157,7 +163,7 @@ const NavBarLoggedIn = () => {
 
             {/* Logout */}
             <button
-              onClick={handleLogout}
+              onClick={() => setLogoutConfirmOpen(true)}
               className="px-5 py-2 rounded-full border border-green-600 text-green-700 font-semibold hover:bg-green-50 transition duration-300 cursor-pointer"
             >
               Logout
@@ -166,8 +172,33 @@ const NavBarLoggedIn = () => {
         </div>
       </nav>
 
-      {/* Push down page content so it doesn't go under navbar */}
-      <div className="pt-0"></div>
+      {/* Push down page content */}
+    
+
+      {/* Logout Confirmation Modal */}
+      {logoutConfirmOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/20">
+          <div className="bg-white rounded-2xl p-6 w-80 max-w-[90%] flex flex-col items-center shadow-lg">
+            <h2 className="text-lg font-semibold text-gray-800 mb-4 text-center">
+              Are you sure you want to logout?
+            </h2>
+            <div className="flex justify-between w-full mt-2 space-x-4">
+              <button
+                onClick={() => setLogoutConfirmOpen(false)}
+                className="flex-1 px-4 py-2 rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleLogout}
+                className="flex-1 px-4 py-2 rounded-full bg-green-400 text-white hover:bg-red-700 transition"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };

@@ -1,6 +1,5 @@
-// src/pages/admin/AdminRecommendations.jsx
 import React, { useEffect, useState } from "react";
-import { CheckCircle, XCircle, Eye, Search } from "lucide-react";
+import { CheckCircle, XCircle, Eye, MoreHorizontal } from "lucide-react";
 import api from "../../utils/apiUtiles";
 import Loader from "../../components/common/Loader";
 
@@ -12,6 +11,7 @@ const AdminRecommendations = () => {
   const [actionModal, setActionModal] = useState({ open: false, type: "", rec: null });
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [dropdownOpen, setDropdownOpen] = useState(null);
 
   const backendURL = "http://localhost:4000";
 
@@ -35,6 +35,7 @@ const AdminRecommendations = () => {
   // Handle approve/reject confirmation
   const handleActionClick = (rec, type) => {
     setActionModal({ open: true, type, rec });
+    setDropdownOpen(null);
   };
 
   const confirmAction = async () => {
@@ -73,31 +74,30 @@ const AdminRecommendations = () => {
   const pending = recommendations.filter(r => r.status === "pending").length;
 
   const statusCards = [
-    { title: "Pending", value: pending, color: "bg-yellow-50 text-yellow-800" },
-    { title: "Approved", value: approved, color: "bg-green-50 text-green-800" },
-    { title: "Rejected", value: rejected, color: "bg-red-50 text-red-800" },
-    { title: "Total", value: total, color: "bg-blue-50 text-blue-800" },
+    { title: "Pending", value: pending },
+    { title: "Approved", value: approved },
+    { title: "Rejected", value: rejected },
+    { title: "Total", value: total },
   ];
 
   return (
     <div className="flex-1 bg-gray-50 min-h-screen p-6">
-      <h2 className="text-2xl font-bold mb-4 text-gray-800">Manage Recommendations</h2>
+      <h2 className="text-2xl font-bold mb-4 text-gray-800 sticky top-0 bg-gray-50 z-10">Manage Recommendations</h2>
 
       {/* Status Cards */}
       <div className="flex flex-wrap gap-4 mb-6">
         {statusCards.map((card, idx) => (
-          <div key={idx} className={`px-4 py-3 rounded-lg shadow ${card.color} font-semibold`}>
-            <p className="text-sm">{card.title}</p>
-            <p className="text-xl font-bold">{card.value}</p>
+          <div key={idx} className="px-4 py-3 rounded-lg shadow bg-white border font-semibold">
+            <p className="text-sm text-gray-500">{card.title}</p>
+            <p className="text-xl font-bold text-gray-800">{card.value}</p>
           </div>
         ))}
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-3 mb-4 items-center">
+      <div className="flex flex-wrap gap-3 mb-4 items-center sticky top-[80px] bg-gray-50 z-10 p-2">
         {/* Search */}
         <div className="flex items-center gap-2 max-w-sm">
-          <Search className="w-5 h-5 text-gray-400" />
           <input
             type="text"
             placeholder="Search by place, location, or user"
@@ -133,9 +133,9 @@ const AdminRecommendations = () => {
                 <th className="px-4 py-2 border-b text-left">User</th>
                 <th className="px-4 py-2 border-b text-left">Place</th>
                 <th className="px-4 py-2 border-b text-left">Location</th>
-                <th className="px-4 py-2 border-b">Image</th>
-                <th className="px-4 py-2 border-b">Status</th>
-                <th className="px-4 py-2 border-b">Actions</th>
+                <th className="px-4 py-2 border-b text-center">Images</th>
+                <th className="px-4 py-2 border-b text-center">Status</th>
+                <th className="px-4 py-2 border-b text-center">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -144,48 +144,65 @@ const AdminRecommendations = () => {
                   <td className="px-4 py-2 border-b">{rec.recommendedBy?.name || "User"}</td>
                   <td className="px-4 py-2 border-b">{rec.placeName}</td>
                   <td className="px-4 py-2 border-b">{rec.location}, {rec.country}</td>
-                  <td className="px-4 py-2 border-b">
+
+                  {/* Image Dots */}
+                  <td className="px-4 py-2 border-b text-center">
                     {rec.images?.length > 0 ? (
-                      <img
-                        src={`${backendURL}${rec.images[0]}`}
-                        alt={rec.placeName}
-                        className="h-16 w-16 object-cover rounded cursor-pointer"
+                      <button
                         onClick={() => setSelectedRec(rec)}
-                      />
-                    ) : "-"}
+                        className="flex justify-center items-center gap-1 text-gray-600 hover:text-blue-600"
+                        title={`View ${rec.images.length} images`}
+                      >
+                        {rec.images.slice(0, 3).map((_, idx) => (
+                          <span key={idx} className="h-2 w-2 bg-gray-400 rounded-full inline-block"></span>
+                        ))}
+                        {rec.images.length > 3 && (
+                          <span className="text-xs text-gray-500">+{rec.images.length - 3}</span>
+                        )}
+                      </button>
+                    ) : (
+                      "-"
+                    )}
                   </td>
-                  <td className="px-4 py-2 border-b capitalize">
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        rec.status === "approved"
-                          ? "bg-green-100 text-green-700"
-                          : rec.status === "rejected"
-                          ? "bg-red-100 text-red-700"
-                          : "bg-yellow-100 text-yellow-700"
-                      }`}
-                    >
+
+                  {/* Status */}
+                  <td className="px-4 py-2 border-b text-center capitalize">
+                    <span className="px-2 py-1 rounded-full text-xs font-medium border text-gray-600">
                       {rec.status}
                     </span>
                   </td>
-                  <td className="px-4 py-2 border-b flex items-center gap-2">
+
+                  {/* Actions Dropdown */}
+                  <td className="px-4 py-2 border-b text-center relative">
                     <button
-                      onClick={() => handleActionClick(rec, "approve")}
-                      className="p-1 text-green-600 hover:bg-green-50 rounded"
+                      onClick={() => setDropdownOpen(dropdownOpen === rec._id ? null : rec._id)}
+                      className="p-1 hover:bg-gray-100 rounded"
                     >
-                      <CheckCircle size={18} />
+                      <MoreHorizontal size={18} />
                     </button>
-                    <button
-                      onClick={() => handleActionClick(rec, "reject")}
-                      className="p-1 text-red-600 hover:bg-red-50 rounded"
-                    >
-                      <XCircle size={18} />
-                    </button>
-                    <button
-                      onClick={() => setSelectedRec(rec)}
-                      className="p-1 text-blue-600 hover:bg-blue-50 rounded"
-                    >
-                      <Eye size={18} />
-                    </button>
+
+                    {dropdownOpen === rec._id && (
+                      <div className="absolute right-0 mt-1 w-32 bg-white border rounded shadow-lg z-20">
+                        <button
+                          onClick={() => handleActionClick(rec, "approve")}
+                          className="w-full text-left px-4 py-2 hover:bg-green-50 text-green-600 flex items-center gap-1"
+                        >
+                          <CheckCircle size={16} /> Approve
+                        </button>
+                        <button
+                          onClick={() => handleActionClick(rec, "reject")}
+                          className="w-full text-left px-4 py-2 hover:bg-red-50 text-red-600 flex items-center gap-1"
+                        >
+                          <XCircle size={16} /> Reject
+                        </button>
+                        <button
+                          onClick={() => setSelectedRec(rec)}
+                          className="w-full text-left px-4 py-2 hover:bg-gray-50 text-gray-800 flex items-center gap-1"
+                        >
+                          <Eye size={16} /> View
+                        </button>
+                      </div>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -262,14 +279,9 @@ const AdminRecommendations = () => {
           </div>
         </div>
       )}
-
     </div>
   );
 };
 
 export default AdminRecommendations;
-
-
-
-
 
