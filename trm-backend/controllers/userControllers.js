@@ -76,7 +76,7 @@ export const updateUser = async (req, res) => {
     const updateData = req.body;
 
     // Only allow certain fields to be updated (excluding role)
-    const allowedUpdates = ["name", "email", "status"];
+    const allowedUpdates = ["name", "email", "status", "phoneNumber","address"];
     const filteredData = {};
     Object.keys(updateData).forEach((key) => {
       if (allowedUpdates.includes(key)) filteredData[key] = updateData[key];
