@@ -10,9 +10,11 @@ const NavBarLoggedIn = () => {
   const [query, setQuery] = useState("");
   const [notifications, setNotifications] = useState([]);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
 
   const dropdownRef = useRef(null);
+  const profileRef = useRef(null);
 
   // Fetch notifications
   useEffect(() => {
@@ -36,12 +38,17 @@ const NavBarLoggedIn = () => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
         setDropdownOpen(false);
       }
+      if (profileRef.current && !profileRef.current.contains(e.target)) {
+        setProfileOpen(false);
+      }
     };
+
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const handleSearchChange = (e) => setQuery(e.target.value);
+
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     if (query.trim()) {
@@ -53,8 +60,6 @@ const NavBarLoggedIn = () => {
     localStorage.removeItem("token");
     navigate("/");
   };
-
-  const toggleDropdown = () => setDropdownOpen(!dropdownOpen);
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
@@ -84,8 +89,10 @@ const NavBarLoggedIn = () => {
               placeholder="Search your destination..."
               value={query}
               onChange={handleSearchChange}
-              className="px-4 py-2 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-200 transition duration-200 w-96"
+              className="px-4 py-2 rounded-full border border-gray-300 focus:outline-none 
+              focus:ring-2 focus:ring-green-200 transition w-96"
             />
+
             <button
               type="submit"
               className="ml-2 px-4 py-2 rounded-full bg-green-800 text-white hover:bg-green-900 transition"
@@ -111,24 +118,27 @@ const NavBarLoggedIn = () => {
             ))}
           </div>
 
-          {/* Notifications & Logout */}
+          {/* Notifications + Profile + Logout */}
           <div className="flex items-center space-x-6">
+
             {/* Notifications */}
             <div className="relative" ref={dropdownRef}>
               <button
-                onClick={toggleDropdown}
+                onClick={() => setDropdownOpen(!dropdownOpen)}
                 className="relative p-2 rounded-full hover:bg-gray-100"
               >
                 <Bell className="w-6 h-6 text-green-700 cursor-pointer" />
                 {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full px-1">
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white 
+                  text-xs rounded-full px-1">
                     {unreadCount}
                   </span>
                 )}
               </button>
 
               {dropdownOpen && (
-                <div className="absolute right-0 mt-2 w-80 bg-white z-50 max-h-96 overflow-y-auto shadow-lg rounded-lg">
+                <div className="absolute right-0 mt-2 w-80 bg-white z-50 max-h-96 
+                overflow-y-auto shadow-lg rounded-lg">
                   {notifications.length > 0 ? (
                     notifications.slice(0, 6).map((n) => (
                       <div
@@ -149,8 +159,11 @@ const NavBarLoggedIn = () => {
                       </div>
                     ))
                   ) : (
-                    <p className="px-4 py-3 text-sm text-gray-500">No notifications</p>
+                    <p className="px-4 py-3 text-sm text-gray-500">
+                      No notifications
+                    </p>
                   )}
+
                   <button
                     onClick={() => navigate("/notifications")}
                     className="w-full text-center text-green-600 py-2 hover:bg-gray-50"
@@ -161,19 +174,54 @@ const NavBarLoggedIn = () => {
               )}
             </div>
 
-            {/* Logout */}
-            <button
-              onClick={() => setLogoutConfirmOpen(true)}
-              className="px-5 py-2 rounded-full border border-green-600 text-green-700 font-semibold hover:bg-green-50 transition duration-300 cursor-pointer"
-            >
-              Logout
-            </button>
+            {/* Profile Dropdown */}
+            <div className="relative" ref={profileRef}>
+              <button
+                onClick={() => setProfileOpen(!profileOpen)}
+                className="w-9 h-9 rounded-full bg-green-700 text-white 
+                flex items-center justify-center font-semibold hover:opacity-90"
+              >
+                U
+              </button>
+
+              {profileOpen && (
+                <div
+                  className="absolute right-0 mt-2 w-48 bg-white z-50 shadow-lg 
+                  rounded-xl py-2 border"
+                >
+                  <button
+                    onClick={() => navigate("/profile")}
+                    className="w-full text-left px-4 py-2 hover:bg-gray-50 
+                    text-sm text-gray-700"
+                  >
+                    My Profile
+                  </button>
+
+                  <button
+                    onClick={() => navigate("/bookings")}
+                    className="w-full text-left px-4 py-2 hover:bg-gray-50 
+                    text-sm text-gray-700"
+                  >
+                    My Bookings
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setProfileOpen(false);
+                      setLogoutConfirmOpen(true);
+                    }}
+                    className="w-full text-left px-4 py-2 hover:bg-gray-50 
+                    text-sm text-red-600 font-medium"
+                  >
+                    Logout
+                  </button>
+                </div>
+              )}
+            </div>
+
           </div>
         </div>
       </nav>
-
-      {/* Push down page content */}
-    
 
       {/* Logout Confirmation Modal */}
       {logoutConfirmOpen && (
@@ -185,13 +233,15 @@ const NavBarLoggedIn = () => {
             <div className="flex justify-between w-full mt-2 space-x-4">
               <button
                 onClick={() => setLogoutConfirmOpen(false)}
-                className="flex-1 px-4 py-2 rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 transition"
+                className="flex-1 px-4 py-2 rounded-full border border-gray-300 
+                text-gray-700 hover:bg-gray-50 transition"
               >
                 Cancel
               </button>
               <button
                 onClick={handleLogout}
-                className="flex-1 px-4 py-2 rounded-full bg-green-400 text-white hover:bg-red-700 transition"
+                className="flex-1 px-4 py-2 rounded-full bg-green-400 
+                text-white hover:bg-red-700 transition"
               >
                 Logout
               </button>
@@ -204,3 +254,4 @@ const NavBarLoggedIn = () => {
 };
 
 export default NavBarLoggedIn;
+

@@ -1,5 +1,6 @@
 import Booking from "../../models/BookingModel/BookModel.js";
 import TravelPackage from "../../models/travelpackage.js";
+import mongoose from "mongoose";
 
 // ✅ Create Booking
 export const createBooking = async (req, res) => {
@@ -89,21 +90,22 @@ export const getAllBookings = async (req, res) => {
 };
 
 // ✅ Get user bookings
+// Get user bookings
+
 export const getUserBookings = async (req, res) => {
   try {
-    const userId = req.user?._id;
-    if (!userId) {
-      return res.status(401).json({ success: false, message: "User must be logged in" });
-    }
+    console.log("Logged-in user id:", req.user._id);
 
-    const bookings = await Booking.find({ user: userId })
-      .populate("travelPackage", "title price duration")
-      .sort({ createdAt: -1 });
+    // Fetch bookings for the logged-in user and populate travelPackage name and price
+    const bookings = await Booking.find({ user: req.user._id })
+      .populate("travelPackage", "name price duration"); // only fetch fields you need
+
+    console.log("Bookings found for this user:", bookings);
 
     res.status(200).json({ success: true, data: bookings });
-  } catch (error) {
-    console.error("Get user bookings error:", error);
-    res.status(500).json({ success: false, message: error.message });
+  } catch (err) {
+    console.error("getUserBookings Error:", err);
+    res.status(500).json({ success: false, message: err.message });
   }
 };
 

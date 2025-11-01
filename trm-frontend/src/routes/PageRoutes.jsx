@@ -46,6 +46,7 @@ import ManageHotels from "../pages/admin/ManageHotel";
 import AdminOverview from "../pages/admin/AdminOverview";
 import Profile from "../pages/user/Profile"
 import AdminProfile from "../pages/admin/AdminProfile";
+import UserBookings from "../pages/user/Bookindetails";
 
 
 
@@ -106,7 +107,8 @@ const PageRoutes = () => {
          <Route path="/admin/manage-blogs" element={<SidebarWrapper><ManageBlogs /></SidebarWrapper>} />
            <Route path="/admin/overview" element={<SidebarWrapper><AdminOverview /></SidebarWrapper>} />
          
-              <Route path="/profile" element={<MainLayout><Profile /></MainLayout>} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/bookings" element={<UserBookings />} />
            
               <Route path="/admin/profile"element={<SidebarWrapper><AdminProfile /></SidebarWrapper>}
 />
