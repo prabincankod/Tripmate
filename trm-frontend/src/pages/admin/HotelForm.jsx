@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 
 const HotelForm = ({ formData, setFormData, handleSubmit, places }) => {
+  console.log("helo world", formData);
   const fileTypes = ".jpg,.jpeg,.png";
   const [contactError, setContactError] = useState("");
 
@@ -34,10 +35,7 @@ const HotelForm = ({ formData, setFormData, handleSubmit, places }) => {
   };
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="p-2 max-h-[80vh] overflow-y-auto"
-    >
+    <form onSubmit={handleSubmit} className="p-2 max-h-[80vh] overflow-y-auto">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* LEFT COLUMN */}
         <div className="space-y-4">
@@ -243,7 +241,7 @@ const HotelForm = ({ formData, setFormData, handleSubmit, places }) => {
                   src={
                     formData.image instanceof File
                       ? URL.createObjectURL(formData.image)
-                      : formData.image
+                      : `http://localhost:4000${formData.image}`
                   }
                   alt="preview"
                   className="w-full h-full object-cover"

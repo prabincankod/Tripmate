@@ -182,7 +182,7 @@ const handleEdit = (hotel) => {
     placeId: hotel.placeId?._id || "",
     name: hotel.name || "",
     description: hotel.description || "",
-    image: null,
+    image: hotel.image,
     address: hotel.address || "",
     contact: hotel.contact || "",
     priceRange: hotel.priceRange || "",
