@@ -1,3 +1,4 @@
+import { Trash } from "lucide-react";
 import { useState } from "react";
 
 const HotelForm = ({ formData, setFormData, handleSubmit, places }) => {
@@ -181,7 +182,7 @@ const HotelForm = ({ formData, setFormData, handleSubmit, places }) => {
                   onClick={() => removeArrayItem("amenities", idx)}
                   className="text-red-500"
                 >
-                  Remove
+<Trash />
                 </button>
               </div>
             ))}
@@ -212,7 +213,7 @@ const HotelForm = ({ formData, setFormData, handleSubmit, places }) => {
                   onClick={() => removeArrayItem("roomFeatures", idx)}
                   className="text-red-500"
                 >
-                  Remove
+                  <Trash />
                 </button>
               </div>
             ))}

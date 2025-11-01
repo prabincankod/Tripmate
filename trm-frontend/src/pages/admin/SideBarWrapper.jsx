@@ -15,7 +15,7 @@ const SidebarWrapper = ({ children }) => {
   };
 
   return (
-    <div className="flex h-screen w-full bg-gray-100 overflow-hidden">
+    <div className="flex h-screen w-full bg-gray-100  ">
       {/* Sidebar */}
       <div
         className={`fixed bg-white inset-y-0 left-0 z-30 w-64   transform transition-transform duration-300 ease-in-out
