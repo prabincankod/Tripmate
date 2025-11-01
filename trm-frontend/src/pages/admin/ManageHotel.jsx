@@ -259,7 +259,7 @@ const handleEdit = (hotel) => {
                 <th className="px-4 py-3 text-left font-medium">Address</th>
                 <th className="px-4 py-3 text-left font-medium">Contact</th>
                 <th className="px-4 py-3 text-left font-medium">Price</th>
-                <th className="px-4 py-3 text-left font-medium text-right">
+                <th className="px-4 py-3 text-left font-medium">
                   Actions
                 </th>
               </tr>
