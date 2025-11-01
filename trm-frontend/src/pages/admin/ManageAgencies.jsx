@@ -13,7 +13,11 @@ const ManageAgencies = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [selectedDoc, setSelectedDoc] = useState(null);
-  const [confirmAction, setConfirmAction] = useState({ show: false, id: null, type: "" });
+  const [confirmAction, setConfirmAction] = useState({
+    show: false,
+    id: null,
+    type: "",
+  });
   const [dropdownOpen, setDropdownOpen] = useState(null);
 
   const dropdownRef = useRef(null);
@@ -85,7 +89,10 @@ const ManageAgencies = () => {
         <h2 className="text-3xl font-bold text-gray-800">Manage Agencies</h2>
         <div className="flex flex-col md:flex-row gap-3 items-center w-full md:w-auto">
           <div className="relative w-full md:w-64">
-            <Search className="absolute left-3 top-2.5 text-gray-400" size={18} />
+            <Search
+              className="absolute left-3 top-2.5 text-gray-400"
+              size={18}
+            />
             <input
               type="text"
               placeholder="Search by name or email..."
@@ -108,7 +115,7 @@ const ManageAgencies = () => {
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto border border-gray-200 rounded-lg">
+      <div className="overflow-x-auto border border-gray-200 rounded-lg ">
         {loading ? (
           <Loader fullscreen={false} />
         ) : filteredAgencies.length === 0 ? (
@@ -117,17 +124,34 @@ const ManageAgencies = () => {
           <table className="min-w-full text-sm text-gray-700 border-collapse">
             <thead className="bg-gray-100">
               <tr>
-                <th className="px-5 py-3 text-left font-semibold border-b">Agency Name</th>
-                <th className="px-5 py-3 text-left font-semibold border-b">Email</th>
-                <th className="px-5 py-3 text-left font-semibold border-b">License</th>
-                <th className="px-5 py-3 text-left font-semibold border-b">Documents</th>
-                <th className="px-5 py-3 text-left font-semibold border-b">Status</th>
-                <th className="px-5 py-3 text-center font-semibold border-b">Actions</th>
+                <th className="px-5 py-3 text-left font-semibold border-b">
+                  Agency Name
+                </th>
+                <th className="px-5 py-3 text-left font-semibold border-b">
+                  Email
+                </th>
+                <th className="px-5 py-3 text-left font-semibold border-b">
+                  License
+                </th>
+                <th className="px-5 py-3 text-left font-semibold border-b">
+                  Documents
+                </th>
+                <th className="px-5 py-3 text-left font-semibold border-b">
+                  Status
+                </th>
+                <th className="px-5 py-3 text-center font-semibold border-b">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody>
               {filteredAgencies.map((agency, idx) => (
-                <tr key={agency._id} className={`${idx % 2 === 0 ? "bg-white" : "bg-gray-50"} hover:bg-gray-100 transition`}>
+                <tr
+                  key={agency._id}
+                  className={`${
+                    idx % 2 === 0 ? "bg-white" : "bg-gray-50"
+                  } hover:bg-gray-100 transition `}
+                >
                   <td className="px-5 py-3 font-medium">{agency.agencyName}</td>
                   <td className="px-5 py-3">{agency.agencyEmail}</td>
                   <td className="px-5 py-3">{agency.licenseNumber}</td>
@@ -140,7 +164,9 @@ const ManageAgencies = () => {
                           <button
                             key={i}
                             onClick={() =>
-                              setSelectedDoc(`http://localhost:4000/uploads/${doc}`)
+                              setSelectedDoc(
+                                `http://localhost:4000/uploads/${doc}`
+                              )
                             }
                             className="flex items-center gap-1 px-2 py-1 bg-gray-100 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-200 transition text-xs"
                           >
@@ -166,10 +192,12 @@ const ManageAgencies = () => {
                       {agency.status}
                     </span>
                   </td>
-                  <td className="px-5 py-3 text-center relative" ref={dropdownRef}>
+                  <td className="px-5 py-3 text-center ">
                     <button
                       onClick={() =>
-                        setDropdownOpen(dropdownOpen === agency._id ? null : agency._id)
+                        setDropdownOpen(
+                          dropdownOpen === agency._id ? null : agency._id
+                        )
                       }
                       className="px-3 py-1.5 bg-gray-700 text-white rounded-md hover:bg-black text-xs flex items-center justify-center gap-1"
                     >
@@ -177,13 +205,20 @@ const ManageAgencies = () => {
                     </button>
 
                     {dropdownOpen === agency._id && (
-                      <div className="absolute right-0 mt-1 w-36 bg-white border border-gray-200 rounded-md shadow-lg z-50">
+                      <div
+                        role="menu"
+                        className="absolute right-0 m-2 w-40 bg-white border border-gray-200 rounded-lg shadow-xl z-50 overflow-hidden"
+                      >
                         {agency.status !== "Approved" && (
                           <button
                             onClick={() =>
-                              setConfirmAction({ show: true, id: agency._id, type: "approve" })
+                              setConfirmAction({
+                                show: true,
+                                id: agency._id,
+                                type: "approve",
+                              })
                             }
-                            className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100"
+                            className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 transition"
                           >
                             Approve
                           </button>
@@ -191,18 +226,26 @@ const ManageAgencies = () => {
                         {agency.status !== "Rejected" && (
                           <button
                             onClick={() =>
-                              setConfirmAction({ show: true, id: agency._id, type: "reject" })
+                              setConfirmAction({
+                                show: true,
+                                id: agency._id,
+                                type: "reject",
+                              })
                             }
-                            className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100"
+                            className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 transition"
                           >
                             Reject
                           </button>
                         )}
                         <button
                           onClick={() =>
-                            setConfirmAction({ show: true, id: agency._id, type: "delete" })
+                            setConfirmAction({
+                              show: true,
+                              id: agency._id,
+                              type: "delete",
+                            })
                           }
-                          className="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-gray-100"
+                          className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-100 transition"
                         >
                           Delete
                         </button>
